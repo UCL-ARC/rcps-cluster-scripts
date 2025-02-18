@@ -608,38 +608,23 @@ function __main() {
     local pool_display_order=("home" "scratch" "lustre")
 
     case "$clustername" in
-        "legion")
-            msg debug "using settings for legion"
-            local quota_mode="project"
-            local -A pools=([home]="/home/%username%" [scratch]="/scratch/scratch/%username%")
-            local default_pool="scratch"
-            ;;
         "myriad")
             msg debug "using settings for myriad"
             local quota_mode="project"
             local -A pools=([home]="/home/%username%" [scratch]="/scratch/scratch/%username%")
             local default_pool="scratch"
             ;;
-        "grace")
-            msg debug "using settings for grace"
-            # Grace has home and scratch but only home has quotas enabled
-            local quota_mode="user"
-            local -A pools=([home]="/home/%username%")
-            local default_pool="home"
-            ;;
-        "thomas")
-            msg debug "using settings for thomas"
-            # The version of Lustre on Thomas is too old to support projects,
-            #  so we have a single quota that encompasses both home and Scratch
-            #  spaces.
-            local quota_mode="user"
-            local -A pools=([lustre]="/scratch")
-            local default_pool="lustre"
-            ;;
         "kathleen")
             msg debug "using settings for kathleen"
             # Kathleen's new Lustre uses project quotas,
             # but no separate quotas for home and scratch
+            local quota_mode="project"
+            local -A pools=([lustre]="/home/%username%")
+            local default_pool="lustre"
+            ;;
+        dev-?)
+            msg debug "using settings for hydra"
+            # like Kathleen
             local quota_mode="project"
             local -A pools=([lustre]="/home/%username%")
             local default_pool="lustre"
