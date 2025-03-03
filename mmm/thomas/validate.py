@@ -10,7 +10,7 @@ def user_has_privs():
     me = os.environ.get('USER')
     mygids = os.getgroups()
     mygroups = [grp.getgrgid(g).gr_name for g in mygids]
-    if "ccsprcop" in mygroups or "lgmmmpoc" in mygroups or "ccspapp" in me:
+    if "ccsprcop" in mygroups or "lgmmmpoc" in mygroups or "ag-archpc-mmm-poc-tools" in mygroups or "ccspapp" in me:
         return True
     else:
         return False
