@@ -251,9 +251,9 @@ if __name__ == "__main__":
         print(err, file=sys.stderr)
         exit(1)
 
-    # Check that the user running the create command is a member of ccsprcop or lgmmmpoc
+    # Check that the user running the create command is a member of ccsprcop or lgmmmpoc or ag-archpc-mmm-poc-tools
     if not validate.user_has_privs():
-        print("You need to be a member of the lgmmmpoc or ccsprcop groups to run the create commands. Exiting.", file=sys.stderr)
+        print("You need to be a member of the lgmmmpoc or ag-archpc-mmm-poc-tools or ccsprcop groups to run the create commands. Exiting.", file=sys.stderr)
         exit(1)
 
     # Pick the correct MMM db to connect to

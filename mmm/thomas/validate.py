@@ -1,7 +1,7 @@
 # UCL input validation module
 import sys
 
-# Check that the user running this script is in ccsprcop or lgmmmpoc and 
+# Check that the user running this script is in ccsprcop or lgmmmpoc or ag-archpc-mmm-poc-tools and 
 # hence has permission to run commands that make changes.
 # Or that they are ccspapp.
 def user_has_privs():
