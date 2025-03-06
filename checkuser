@@ -106,6 +106,40 @@ function slurm_check_user_exists() {
     fi
 }
 
+function slurm_check_accounts() {
+    local username="$1"
+    local account
+    local -a check_accounts=(allusers)
+    local user_accounts="$(sacctmgr show assoc where user="$username" --noheader format='account%-40')"
+
+    for account in "${check_accounts[@]}"; do
+        echo -n "Checking whether user is in account \"${slurm_account_desc}\": "
+        if fgrep -qw "${account}" <<< "${user_accounts}"; then
+            echo "${GREEN}yes${RESET}"
+        else
+            echo "${RED}no${RESET}"
+        fi
+    done
+}
+
+
+function sge_check_access () {
+    local username="$1"
+    local pam_listfile="/var/opt/sge/shared/userlist"
+
+    echo -n "Checking whether user is in the actual PAM userlist: "
+    if [[ ! -r "$pam_listfile" ]]; then
+        echo "${RED}error${RESET}"
+        return
+    fi
+    if grep "^$username\$" "$pam_listfile" >/dev/null; then
+        echo "${GREEN}yes${RESET}"
+    else
+        echo "${RED}no${RESET}"
+    fi
+}
+
+
 have_sge=""
 have_slurm=""
 if command -v qconf >/dev/null; then
@@ -114,24 +148,16 @@ elif command -v sacctmgr >/dev/null; then
     have_slurm='yes'
 fi
 
+
 if [[ -n "$have_sge" ]]; then
     sge_check_acls "$username"
     sge_check_nosub "$username"
+    sge_check_access "$username"
 elif [[ -n "$have_slurm" ]]; then
     slurm_check_user_exists "$username"
+    slurm_check_accounts "$username"
 fi
 
-
-echo -n "Checking whether user is in the actual PAM userlist: "
-pam_listfile="/var/opt/sge/shared/userlist"
-if [[ ! -r "$pam_listfile" ]]; then
-    echo "${RED}error${RESET}"
-fi
-if grep "^$username\$" "$pam_listfile" >/dev/null; then
-    echo "${GREEN}yes${RESET}"
-else
-    echo "${RED}no${RESET}"
-fi
 
 echo "" # Blank line for section separation
 
