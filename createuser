@@ -42,19 +42,13 @@ else
 fi
 
 case "$cluster_name" in
-    "grace")
-        ACL="Open"
-        ;;
-    "legion")
-        ACL="Open"
-        ;;
     "kathleen")
         ACL="Open"
         ;;
     "myriad")
         ACL="Open"
         ;;
-    "thomas"|"michael"|"young")
+    "michael"|"young")
         echo "Error: this is not the correct way to add users to the Thomas and Michael clusters." >&2
         exit 1
         ;;
@@ -63,25 +57,6 @@ case "$cluster_name" in
         exit 1
         ;;
 esac
-
-if [[ "$cluster_name" == "legion" ]]; then
-    echo "Reminder: new accounts unassociated with existing paid projects 
-          are no longer to be created on Legion (as of 2019-01-01). "
-    read -r -p "Are you sure you want to create this account? Please type 'yes' if so: " response
-    if [[ "$response" != "yes" ]]; then
-        echo "Okay, stopping."
-        exit
-    fi
-fi
-
-if [[ "$cluster_name" == "grace" ]]; then
-    echo "Reminder: new accounts are no longer to be created on Grace."
-    read -r -p "Are you sure you want to create this account? Please type 'yes' if so: " response
-    if [[ "$response" != "yes" ]]; then
-        echo "Okay, stopping."
-        exit
-    fi
-fi
 
 echo "creating account for $1"
 if command -v qconf >/dev/null; then
