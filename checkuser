@@ -124,7 +124,6 @@ function slurm_check_accounts() {
     done
 }
 
-
 function sge_check_access () {
     local username="$1"
     local pam_listfile="/var/opt/sge/shared/userlist"
@@ -136,6 +135,40 @@ function sge_check_access () {
     fi
     if grep "^$username\$" "$pam_listfile" >/dev/null; then
         echo "${GREEN}yes${RESET}"
+    else
+        echo "${RED}no${RESET}"
+    fi
+}
+
+function slurm_check_access () {
+    local username="$1"
+    local clustername="$(/shared/ucl/sysops/libexec/clustname 2>/dev/null || true)"
+    local pag
+    local user_groups
+
+    echo -n "Checking whether user is in the platform access group: "
+    if [[ -z "$clustername" ]]; then
+        echo "${RED}cannot determine cluster${RESET}"
+        return
+    fi
+    case "$clustername" in
+        myriad)   pag='pag-archpc-myriad' ;;
+        kathleen) pag='pag-archpc-kathleen' ;;
+        young)    pag='pag-archpc-young' ;;
+        michael)  pag='pag-archpc-michael' ;;
+        dev-*)    pag='pag-archpc-hydra' ;;
+        *)
+            echo "${RED}unknown cluster \"$clustername\"${RESET}"
+            return
+            ;;
+    esac
+    if user_groups="$(groups "$username" 2>&1)"; then
+        user_groups="${user_groups#*:}"
+        if fgrep -qw "$pag" <<< "$user_groups"; then
+            echo "${GREEN}yes${RESET} ($pag)"
+        else
+            echo "${RED}no${RESET}"
+        fi
     else
         echo "${RED}no${RESET}"
     fi
@@ -158,6 +191,7 @@ if [[ -n "$have_sge" ]]; then
 elif [[ -n "$have_slurm" ]]; then
     slurm_check_user_exists "$username"
     slurm_check_accounts "$username"
+    slurm_check_access "$username"
 fi
 
 
