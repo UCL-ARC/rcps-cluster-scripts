@@ -5,7 +5,7 @@ set -e
 export LC_ALL=C
 
 cluster_name="${CLUSTER_NAME:-}"
-ACL=""
+SGE_ACL=""
 
 # Make sure we have a userid to create
 if [ "$#" -ne "1" ];
@@ -43,10 +43,10 @@ fi
 
 case "$cluster_name" in
     "kathleen")
-        ACL="Open"
+        SGE_ACL="Open"
         ;;
     "myriad")
-        ACL="Open"
+        SGE_ACL="Open"
         ;;
     "michael"|"young")
         echo "Error: this is not the correct way to add users to the Thomas and Michael clusters." >&2
@@ -60,7 +60,7 @@ esac
 
 echo "creating account for $1"
 if command -v qconf >/dev/null; then
-    qconf -au "$1" "$ACL"
+    qconf -au "$1" "$SGE_ACL"
 elif command -v sacctmgr >/dev/null; then
     echo "Slurm user adding is not yet implemented since the details of cluster implementation have not yet been finalised."
     echo "You'll need the sacctmgr command, probably something like this:"
