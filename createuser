@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -o nounset
 
 export LC_ALL=C
 
@@ -14,13 +15,14 @@ then
     echo "Run \"createuser userid\"" 1>&2
     exit 1
 fi 
+username="$1"
 
 # Check that the userid starts with a letter and is alphanumeric, 7 chars
-if echo "$1" | grep -qE '^[[:lower:]][[:lower:][:digit:]]{6}$' ;
+if echo "$username" | grep -qE '^[[:lower:]][[:lower:][:digit:]]{6}$' ;
 then
-    echo "Valid user string: $1" 1>&2
+    echo "Valid user string: ${username}" 1>&2
 else
-    echo "Invalid user string: $1" 1>&2
+    echo "Invalid user string: ${username}" 1>&2
     echo "Run \"createuser userid\"" 1>&2
     exit 1
 fi 
@@ -64,13 +66,13 @@ case "$cluster_name" in
         ;;
 esac
 
-echo "creating account for $1"
+echo "creating account for ${username}"
 if command -v qconf >/dev/null; then
     if [[ -z "$SGE_ACL" ]]; then
         echo "Error: detected SGE, but this cluster is not supposed to run SGE." >&2
         exit 1
     fi
-    qconf -au "$1" "$SGE_ACL"
+    qconf -au "${username}" "$SGE_ACL"
 elif command -v sacctmgr >/dev/null; then
     if [[ -z "${slurm_account}" ]]; then
         echo "Error: detected Slurm, but this cluster is not supposed to run Slurm." >&2
@@ -82,7 +84,7 @@ else
     exit 1
 fi
 
-RECIPIENT=$1@ucl.ac.uk
+RECIPIENT="${username}@ucl.ac.uk"
 echo "Emailing user ${RECIPIENT}"
 /usr/sbin/sendmail -t<<EOF
 From: rc-support@ucl.ac.uk
