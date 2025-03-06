@@ -106,11 +106,18 @@ function slurm_check_user_exists() {
     fi
 }
 
-
+have_sge=""
+have_slurm=""
 if command -v qconf >/dev/null; then
+    have_sge='yes'
+elif command -v sacctmgr >/dev/null; then
+    have_slurm='yes'
+fi
+
+if [[ -n "$have_sge" ]]; then
     sge_check_acls "$username"
     sge_check_nosub "$username"
-elif command -v sacctmgr >/dev/null; then
+elif [[ -n "$have_slurm" ]]; then
     slurm_check_user_exists "$username"
 fi
 
