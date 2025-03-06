@@ -286,7 +286,7 @@ function sge_check_jobs () {
 function slurm_check_jobs () {
     local username="$1"
     echo -n "Checking whether user has jobs in the queue: "
-    num_jobs="$(squeue --noheader --user="$username" --Format='JobID' 2>/dev/null || true)"
+    num_jobs="$(squeue --noheader --user="$username" --Format='JobID' 2>/dev/null | wc -l)"
     if [ "$num_jobs" -gt 0 ]; then
         echo "${GREEN}yes${RESET}"
     else
