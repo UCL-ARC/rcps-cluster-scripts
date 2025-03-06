@@ -33,10 +33,8 @@ if [[ -n "$cluster_name" ]]; then
     # Allow overriding cluster_name for testing/whatever
     echo "Warning: cluster name overridden as \"$cluster_name\"" >&2
     cluster_name="$cluster_name"
-elif [[ -r /opt/sge/default/common/cluster_name ]]; then
-    cluster_name="$(cat /opt/sge/default/common/cluster_name)"
-elif command -v sacctmgr >/dev/null; then
-    cluster_name="$(sacctmgr -pn list cluster | cut -f 1 -d '|')"
+elif [[ -x /shared/ucl/sysops/libexec/clustname ]]; then
+    cluster_name="$(/shared/ucl/sysops/libexec/clustname)"
 elif [[ -r /shared/ucl/etc/cluster_name ]]; then
     cluster_name="$(cat /shared/ucl/etc/cluster_name)"
 else
