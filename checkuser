@@ -109,11 +109,13 @@ function slurm_check_user_exists() {
 function slurm_check_accounts() {
     local username="$1"
     local account
+    local account_desc
     local -a check_accounts=(allusers)
     local user_accounts="$(sacctmgr show assoc where user="$username" --noheader format='account%-40')"
 
     for account in "${check_accounts[@]}"; do
-        echo -n "Checking whether user is in account \"${slurm_account_desc}\": "
+        account_desc="$(sacctmgr show account "$account" --json | jq -r '.accounts[].description')"
+        echo -n "Checking whether user is in account ${account} (${account_desc}): "
         if fgrep -qw "${account}" <<< "${user_accounts}"; then
             echo "${GREEN}yes${RESET}"
         else
