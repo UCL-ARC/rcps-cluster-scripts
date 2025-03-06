@@ -1,7 +1,7 @@
 # UCL input validation module
 import sys
 
-# Check that the user running this script is in ccsprcop or lgmmmpoc and 
+# Check that the user running this script is in ccsprcop or lgmmmpoc or ag-archpc-mmm-poc-tools and 
 # hence has permission to run commands that make changes.
 # Or that they are ccspapp.
 def user_has_privs():
@@ -10,7 +10,7 @@ def user_has_privs():
     me = os.environ.get('USER')
     mygids = os.getgroups()
     mygroups = [grp.getgrgid(g).gr_name for g in mygids]
-    if "ccsprcop" in mygroups or "lgmmmpoc" in mygroups or "ccspapp" in me:
+    if "ccsprcop" in mygroups or "lgmmmpoc" in mygroups or "ag-archpc-mmm-poc-tools" in mygroups or "ccspapp" in me:
         return True
     else:
         return False
