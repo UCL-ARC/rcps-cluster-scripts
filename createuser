@@ -77,10 +77,6 @@ elif command -v sacctmgr >/dev/null; then
         exit 1
     fi
     sacctmgr --immediate --quiet add user name="${username}" defaultaccount="${slurm_account}"
-    if [[ $? -ne 0 ]]; then
-        echo "Error: could not add Slurm user - are you a Slurm operator?" >&2
-        exit 1
-    fi
 else
     echo "Error: no mechanism for adding users found." >&2
     exit 1
