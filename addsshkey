@@ -10,7 +10,7 @@ Creates and chmods .ssh if it doesn't exist, appends key to ~/.ssh/authorized_ke
     KEY    the ssh key (in quotes, including ssh-rsa)"
 
 # No options, show usage
-if [ $# == 0 ] ; then
+if [[ $# == 0 ]] ; then
     echo "$USAGE"
     exit 0;
 fi
@@ -21,6 +21,9 @@ while getopts 'h' option; do
     h) echo "$USAGE"
        exit 0
        ;;
+    *) echo "Error: invalid option to $0" >&2
+       exit 1
+       ;;
   esac
 done
 
@@ -30,7 +33,7 @@ ssh_key=$2
 
 # become user, create ssh directory and add key
 echo "Becoming ${username}, creating ssh dir and adding key"
-become_output=$(sudo /shared/ucl/sysops/libexec/become $username <<EOF
+become_output=$(sudo /shared/ucl/sysops/libexec/become "$username" <<EOF
 echo "Beacon"
 mkdir -p .ssh
 chmod go-rwx .ssh
@@ -38,8 +41,11 @@ echo "${ssh_key}" >> ~/.ssh/authorized_keys
 EOF
 )
 become_exit_status=$?
-if [ "${become_output:0:6}" != "Beacon" ]; then
+if [[ "${become_output:0:6}" != "Beacon" ]]; then
   echo "Error: could not become user ${username}" >&2
   exit 1
 fi
-
+if [[ "$become_exit_status" -ne 0 ]]; then
+  echo "Warning: keydrop subprocess exited with a non-zero code. Check output." >&2
+  exit "$become_exit_status"
+fi

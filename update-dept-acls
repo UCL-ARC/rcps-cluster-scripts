@@ -353,13 +353,13 @@ only_def_funcs="false"
 
 while true ; do
     case "$1" in
-        -h|--help) show_help_and_exit 0; shift ;;
+        -h|--help) show_help_and_exit 0 ;;
+        -x) show_example_and_exit ;;
         -o|--outdir) path_for_text_files="$2"; shift 2 ;;
         -n|--no-sge) skip_adding_users_to_sge="true"; shift ;;
         -s|--skip-text) skip_text_list_gen="true"; shift ;;
         -w|--wipe-acls) wipe_acls_first="true"; shift ;;
         --only-def-funcs) only_def_funcs="true"; shift ;;
-        -x) show_example_and_exit; shift ;;
         --) shift ; break ;;
         *) tslog "error: invalid argument '$1'"; exit 1 ;;
     esac

@@ -42,14 +42,13 @@ get_pid_owner () {
 }
 
 get_pid_parent_pid () {
-  if [ "$1" -eq 1 ]; then echo "Error: no what are you doing do not kill the root process stop" >&2; kill -9 $$; fi 
+  if [[ "$1" -eq 1 ]]; then echo "Error: no what are you doing do not kill the root process stop" >&2; kill -9 $$; fi 
   # Unfortunately we can't exit the script from inside a function, so the script self-terminates
   cut -f 4 -d ' ' "/proc/$1/stat"
 }
 
 get_pid_children () {
-  grep "PPid:	$1\$" /proc/[0-9]*/status | sed -e 's_^/proc/\([0-9]*\)/status.*_\1_'
-  #          ^- this is a tab, not spaces
+  grep "PPid:\s$1\$" /proc/[0-9]*/status | sed -e 's_^/proc/\([0-9]*\)/status.*_\1_'
 }
 
 get_mail_address () {
@@ -59,10 +58,10 @@ get_mail_address () {
       echo "nobody@ucl.ac.uk"
   elif [[ "${username:0:3}" == "mmm" ]]; then
       # Do a database lookup and if this fails send to nobody.
-      email_search=$(mmm-to-email $username)
+      email_search=$(mmm-to-email "$username")
       search_success=$?
       if [[ "${search_success}" == "0" ]]; then
-        echo $email_search
+        echo "$email_search"
       else
         echo "Warning: this is an external account, and does not have a valid mail address.">&2
         echo "nobody@ucl.ac.uk"        
@@ -106,7 +105,7 @@ done
 shift $((OPTIND-1));
 
 
-if [ $# -lt 1 ]; then
+if [[ $# -lt 1 ]]; then
   echo "Error: no pids provided. Use '$0 -h' to see options and usage." >&2
   exit 1
 fi
@@ -121,7 +120,7 @@ killed_cmdlines=()
 killed_owners=()
 
 for pid in "$@"; do
-  if [ ! -d "/proc/${pid}" ]; then
+  if [[ ! -d "/proc/${pid}" ]]; then
     echo "Error: no process with pid $pid" >&2
     continue
   fi
@@ -130,12 +129,12 @@ for pid in "$@"; do
   pid_owner=$(get_pid_owner "$pid")
   pid_cmdline=$(get_pid_cmdline "$pid")
   pid_parent_pid=$(get_pid_parent_pid "$pid")
-  pid_children=($(get_pid_children "$pid") ) 
+  mapfile pid_children < <(get_pid_children "$pid") 
 
   echo "Process $pid owned by $pid_owner has command line: $pid_cmdline"
   echo "  parent: $pid_parent_pid: $(sed -e 's/\x0/ /g' "/proc/$pid_parent_pid/cmdline")"
 
-  if [ ${#pid_children[@]} -ne 0 ]; then
+  if [[ ${#pid_children[@]} -ne 0 ]]; then
     echo "  and children:"
     for child_pid in "${pid_children[@]}"; do
       child_cmdline=$(sed -e 's/\x0/ /g' "/proc/$child_pid/cmdline")
@@ -143,7 +142,7 @@ for pid in "$@"; do
     done
   fi
 
-  if [ -z "$option_force" ]; then
+  if [[ -z "$option_force" ]]; then
     read -n 1 -r -p "Attempt to kill this process? [y|N]" definitely_kill
     echo
     # ^- read doesn't add a blank line
@@ -151,7 +150,7 @@ for pid in "$@"; do
     definitely_kill="y"
   fi
 
-  if [ "$definitely_kill" != "y" ]; then
+  if [[ "$definitely_kill" != "y" ]]; then
     echo "Okay, skipping..."
     continue
   fi
@@ -166,18 +165,18 @@ EOF
 )
   become_exit_status=$?
 
-  if [ "${become_output:0:6}" != "Beacon" ]; then
+  if [[ "${become_output:0:6}" != "Beacon" ]]; then
     echo "Error: could not become user ${pid_owner}, failed to kill ${pid}" >&2
   else
-    if [ $become_exit_status -ne 0 ]; then
+    if [[ $become_exit_status -ne 0 ]]; then
       echo "Error: became user but there was a problem killing the process ${pid}" >&2
     else
       echo "kill seems successful, checking... "
       # if this sleep isn't here, the process seems to not have time to die and clean-up
       sleep 10
-      if [ -d "/proc/${pid}" ]; then # there's still a directory in proc with the pid we just tried to kill
+      if [[ -d "/proc/${pid}" ]]; then # there's still a directory in proc with the pid we just tried to kill
         echo "Error: there is still a process with pid ${pid}" >&2
-        if [ "$(get_pid_cmdline "$pid")" = "$pid_cmdline" ]; then
+        if [[ "$(get_pid_cmdline "$pid")" = "$pid_cmdline" ]]; then
           echo "Error: (ctd.) remaining process has same cmdline so is unlikely to be a new process using the same pid. Try hitting it harder?" >&2
         fi
       else
@@ -217,8 +216,8 @@ for owner in "${!mail_inserts[@]}"; do
   echo -e "${mail_inserts[$owner]}"
 
   # Override mailx command with a shell function if we don't want to send mail
-  if [ -n "$do_not_mail" ]; then
-    if [ -n "$show_mail" ]; then
+  if [[ -n "$do_not_mail" ]]; then
+    if [[ -n "$show_mail" ]]; then
       mailx() { (echo "$@" && cat); }
     else
       mailx() { :; }
@@ -226,12 +225,12 @@ for owner in "${!mail_inserts[@]}"; do
   fi
 
   owner_address=$(get_mail_address "$owner")
-  if [ -z "$owner_address" ]; then
+  if [[ -z "$owner_address" ]]; then
     echo "Error: could not get mail address for user $owner" >&2
     exit 3
   fi
 
-  mailx \
+  if mailx \
     -s "${this_cluster} Login Node Processes Killed for $owner" \
     -S from=rc-support@ucl.ac.uk \
     -b rc-support@ucl.ac.uk \
@@ -250,8 +249,7 @@ Regards,
 The RC Support Team
 
 EOF
-
-  if [ $? -eq 0 ]; then
+  then
     echo "Successfully sent mail to $owner"
   else
     echo "Error: failed sending mail attempt to $owner" >&2

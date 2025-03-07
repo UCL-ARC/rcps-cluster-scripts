@@ -10,7 +10,7 @@ SGE_ACL=""
 slurm_account=""
 
 # Make sure we have a userid to create
-if [ "$#" -ne "1" ];
+if [[ "$#" -ne "1" ]];
 then
     echo "Run \"createuser userid\"" 1>&2
     exit 1
@@ -32,7 +32,6 @@ fi
 if [[ -n "$cluster_name" ]]; then
     # Allow overriding cluster_name for testing/whatever
     echo "Warning: cluster name overridden as \"$cluster_name\"" >&2
-    cluster_name="$cluster_name"
 elif [[ -x /shared/ucl/sysops/libexec/clustname ]]; then
     cluster_name="$(/shared/ucl/sysops/libexec/clustname)"
 elif [[ -r /shared/ucl/etc/cluster_name ]]; then

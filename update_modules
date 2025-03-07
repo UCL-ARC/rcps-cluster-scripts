@@ -16,12 +16,12 @@ ops_user=ccspapp
 # 2 am I in ccsprcop
 # 3 if 2, does become exist?
 
-if [ "$(whoami)" == "${ops_user}" ]; then
+if [[ "$(whoami)" == "${ops_user}" ]]; then
   echo "I am ops user ${ops_user}.  No need to use become."
 elif (id -Gn | grep -v '\bccsprcop\b' >/dev/null 2>/dev/null); then
   echo "Error: user should be in ccsprcop group to use this script." >&2
   exit 1
-elif [ ! -x "$become_path" ]; then
+elif [[ ! -x "$become_path" ]]; then
   echo "Error: No become path provided." >&2
   exit 3
 else

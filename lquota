@@ -56,7 +56,7 @@ function callstack() {
     local i
     # These arrays start at index 0, but 0 is this callstack function, so skip it.
     for ((i=1; i<${#FUNCNAME[*]}; i++)) do
-        if [ $i -ne 1 ]; then 
+        if [[ $i -ne 1 ]]; then 
             echo -n "  "  
         fi
         echo "${BASH_SOURCE[$i]}: in \"${FUNCNAME[$i]}\" called from line ${BASH_LINENO[$i]}"
@@ -457,7 +457,7 @@ function human_size_to_kb() {
     if [[ ! "${prefix: -1}" == "i" ]]; then
         prefix="${prefix: -1}"
     fi
-    num_size="${size%$prefix}"
+    num_size="${size%"$prefix"}"
     command -v bc >/dev/null || msg fatal "bc command not found, needed for size conversion"
     human_size="$(bc <<<"scale=10; f = $num_size * ${size_prefixes[$prefix]} / 1024; scale=0; f/1")"
     msg debug "converted human size: $1 -> $human_size"
@@ -550,7 +550,6 @@ EOF
 
 function __main() {
     global_msg_level=info
-    global_robot_mode=""
     global_dry_run=""
     global_quiet_mode=""
     global_calc_usage=""
@@ -602,8 +601,6 @@ function __main() {
     [[ "$#" -gt 1 ]] && usage
     
 
-    # TODO Settings for other clusters
-
     # NB! Pools will not display if they are not listed here!
     local pool_display_order=("home" "scratch" "lustre")
 
@@ -612,7 +609,6 @@ function __main() {
             msg debug "using settings for myriad"
             local quota_mode="project"
             local -A pools=([home]="/home/%username%" [scratch]="/scratch/scratch/%username%")
-            local default_pool="scratch"
             ;;
         "kathleen")
             msg debug "using settings for kathleen"
@@ -620,23 +616,21 @@ function __main() {
             # but no separate quotas for home and scratch
             local quota_mode="project"
             local -A pools=([lustre]="/home/%username%")
-            local default_pool="lustre"
             ;;
         dev-?)
             msg debug "using settings for hydra"
             # like Kathleen
             local quota_mode="project"
             local -A pools=([lustre]="/home/%username%")
-            local default_pool="lustre"
             ;;
         "young"|"michael")
             msg debug "using settings for young+michael"
             # Young and Michael now share one Lustre filesystem
             local quota_mode="project"
             local -A pools=([home]="/home/%username%" [scratch]="/scratch/%username%")
-            local default_pool="scratch"
             ;;
         *)
+            msg fatal "could not determine cluster"
     esac
     
     if [[ -n "$only_list_pools" ]]; then

@@ -1,12 +1,13 @@
 #!/bin/bash
 
+
 ##### Cron job we used for this:
 # Automated pending MMM account creation, every 10 mins. stdout goes to log, stderr to email.
 #SHELL="/bin/bash"
 #MAILTO="somewhere@ucl.ac.uk"   
 #*/10 * * * * /shared/ucl/apps/cluster-scripts/cron/automate_mmm_account >> /home/ccspapp/cron/automate_mmm_account.log
 
-cd "/home/$USER/cron"
+cd "/home/$USER/cron" || exit 1
 source /etc/profile.d/modules.sh
 module load gcc-libs
 module load userscripts
