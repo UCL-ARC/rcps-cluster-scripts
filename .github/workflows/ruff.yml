@@ -6,8 +6,7 @@ jobs:
     name: Ruff-Py
     runs-on: ubuntu-latest
     steps:
-    - uses: 
-      - actions/checkout@v4
-      - astral-sh/ruff-action@v3
+    - uses: actions/checkout@v4
+    - uses: astral-sh/ruff-action@v3
     - name: Run Ruff
       run: "grep -r -m 1 -e '^#!.*python\\b' . | cut -f 1 -d : | xargs ruff check"
