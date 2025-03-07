@@ -88,7 +88,7 @@ mail_mode="false"
 
 while true ; do
     case "$1" in
-        -h|--help) show_help_and_exit; shift ;;
+        -h|--help) show_help_and_exit ;;
         -d|--debug) debug_mode="true"; shift ;;
         -k|--insecure) check_cert="false"; shift ;;
         -x|--secure) check_cert="true"; shift ;;

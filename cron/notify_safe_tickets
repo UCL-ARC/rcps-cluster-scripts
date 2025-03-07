@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd "/home/$USER/cron"
+cd "/home/$USER/cron" || exit 1
 source /etc/profile.d/modules.sh
 module load gcc-libs
 module load userscripts
@@ -25,16 +25,16 @@ output=$(safetickets --refresh | tee safetickets.log)
 # if output is empty, do nothing - either there are no tickets and
 # we don't want an update saying there are none, or there was an error
 # (and only stdout is captured)
-if [ -z "$output" ] 
+if [[ -z "$output" ]] 
 then
     exit 0
 fi
 
 # if old ticket log exists, diff it and send email if the diff is not empty
-if [ -f safetickets_prev.log ]
+if [[ -f safetickets_prev.log ]]
 then
   diff safetickets_prev.log safetickets.log > safetickets.diff
-  if [ -s "safetickets.diff" ]
+  if [[ -s "safetickets.diff" ]]
   then
     _email_notify
   fi

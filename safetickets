@@ -2,8 +2,8 @@
 # wrapper for python3 thomas script
 
 # Source global definitions
-if [ -f /etc/bashrc ]; then
-        . /etc/bashrc
+if [[ -f /etc/bashrc ]]; then
+        source /etc/bashrc
 fi
 
 module purge
@@ -14,5 +14,5 @@ module load mysql-connector-python/2.0.4/python-3.6.3
 
 # get script location
 DIR=$(dirname "$(readlink -f "$0")")
-$DIR/thomas/safe_tickets.py "$@"
+"$DIR/thomas/safe_tickets.py" "$@"
 

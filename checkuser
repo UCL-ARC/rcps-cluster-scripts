@@ -111,12 +111,13 @@ function slurm_check_accounts() {
     local account
     local account_desc
     local -a check_accounts=(allusers)
-    local user_accounts="$(sacctmgr show assoc where user="$username" --noheader format='account%-40')"
+    local user_accounts
+          user_accounts="$(sacctmgr show assoc where user="$username" --noheader format='account%-40')"
 
     for account in "${check_accounts[@]}"; do
         account_desc="$(sacctmgr show account "$account" --json | jq -r '.accounts[].description')"
         echo -n "Checking whether user is in account ${account} (${account_desc}): "
-        if fgrep -qw "${account}" <<< "${user_accounts}"; then
+        if grep -F -qw "${account}" <<< "${user_accounts}"; then
             echo "${GREEN}yes${RESET}"
         else
             echo "${RED}no${RESET}"
@@ -157,9 +158,10 @@ function sge_check_access () {
 
 function slurm_check_access () {
     local username="$1"
-    local clustername="$(/shared/ucl/sysops/libexec/clustname 2>/dev/null || true)"
     local pag
     local user_groups
+    local clustername
+          clustername="$(/shared/ucl/sysops/libexec/clustname 2>/dev/null || true)"
 
     echo -n "Checking whether user is in the platform access group: "
     if [[ -z "$clustername" ]]; then
@@ -179,7 +181,7 @@ function slurm_check_access () {
     esac
     if user_groups="$(groups "$username" 2>&1)"; then
         user_groups="${user_groups#*:}"
-        if fgrep -qw "$pag" <<< "$user_groups"; then
+        if grep -F -qw "$pag" <<< "$user_groups"; then
             echo "${GREEN}yes${RESET} ($pag)"
         else
             echo "${RED}no${RESET}"
@@ -233,7 +235,7 @@ fi
 
 echo -n "Checking whether home directory is *owned* by that user: "
 owner="$(stat --printf=%U "/home/${username}" 2>/dev/null)"
-if [ "$owner" == "$username" ]
+if [[ "$owner" == "$username" ]]
 then
   echo "${GREEN}yes${RESET}"
 else
@@ -242,9 +244,9 @@ fi
 
 echo -n "Checking whether scratch directory is *owned* by that user: "
 owner="$(stat --printf=%U "/scratch/scratch/${username}" 2>/dev/null)"
-if [ "$flag_has_no_scratch" == "n" ]
+if [[ "$flag_has_no_scratch" == "n" ]]
 then
-    if [ "$owner" == "$username" ]
+    if [[ "$owner" == "$username" ]]
     then
       echo "${GREEN}yes${RESET}"
     else
@@ -264,7 +266,7 @@ else
 fi
 
 echo -n "Checking whether scratch directory is usable by owner: "
-if [ "$flag_has_no_scratch" == "n" ]
+if [[ "$flag_has_no_scratch" == "n" ]]
 then
     perms="$(stat --printf=%A "/scratch/scratch/${username}" 2>/dev/null)"
     if [[ "${perms:1:3}" =~ rwx ]];
@@ -292,7 +294,7 @@ function sge_check_jobs () {
     local username="$1"
     echo -n "Checking whether user has jobs in the queue: "
     num_jobs="$(qstat -u "$username" | wc -l)"
-    if [ "$num_jobs" -gt 0 ]; then
+    if [[ "$num_jobs" -gt 0 ]]; then
         echo "${GREEN}yes${RESET}"
     else
         echo "${BLUE}no${RESET}"
@@ -303,7 +305,7 @@ function slurm_check_jobs () {
     local username="$1"
     echo -n "Checking whether user has jobs in the queue: "
     num_jobs="$(squeue --noheader --user="$username" --Format='JobID' 2>/dev/null | wc -l)"
-    if [ "$num_jobs" -gt 0 ]; then
+    if [[ "$num_jobs" -gt 0 ]]; then
         echo "${GREEN}yes${RESET}"
     else
         echo "${BLUE}no${RESET}"
@@ -318,7 +320,7 @@ fi
 
 echo -n "Checking when user last logged in to this node: "
 last_login="$(last -adwn 1 "${username}" | head -n 1)"
-if [ -z "$last_login" ]; then
+if [[ -z "$last_login" ]]; then
     echo "${RED}never${RESET}"
 else
     echo "${BLUE}$last_login${RESET}"

@@ -50,38 +50,38 @@ for name in "$@"; do
 
       ldap_search_term="(${search_key}=${name})"
 
-      if [ -n "$debug_mode" ]; then
+      if [[ -n "$debug_mode" ]]; then
         ldap_search_args=("-d5" "-Epr=1" "-v" "-x" "-LLL" "-w$ldap_password" "-H$ldap_uri" "-b$ldap_rdn" "-D$ldap_bind_user" "$ldap_search_term")
       else
         ldap_search_args=("-x" "-Epr=1" "-LLL" "-w$ldap_password" "-H$ldap_uri" "-b$ldap_rdn" "-D$ldap_bind_user" "$ldap_search_term")
       fi
 
-      if [ -n "$debug_mode" ]; then 
+      if [[ -n "$debug_mode" ]]; then 
         echo "Debug: ldapsearch path is: $LDAPSEARCH_PATH" >&2
         echo "Debug: ldapsearch arguments are: ${ldap_search_args[*]}" >&2
       fi
 
-      if [ -n "$debug_mode" ]; then
+      if [[ -n "$debug_mode" ]]; then
         set -x
       fi
 
       # Have to set the NSS_HASH_ALT_SUPPORT environment variable to 
       #  allow MD5 as a cert hash algorithm. Broken in RHEL6.5->6.6 change. Wooooo.
       # The cryptic perl expression removes wrapping 
-      if [ -n "$debug_mode" ]; then
+      if [[ -n "$debug_mode" ]]; then
         echo "Debug: command to run: NSS_HASH_ALG_SUPPORT=+MD5 $LDAPSEARCH_PATH" "${ldap_search_args[@]}"
       fi
       search_result=$(NSS_HASH_ALG_SUPPORT=+MD5 $LDAPSEARCH_PATH "${ldap_search_args[@]}" | sed -n -e 's/^name: //p' | sort | perl -p00e 's/\r?\n //g' )
       #search_result=$($LDAPSEARCH_PATH "${ldap_search_args[@]}" | perl -p00e 's/\r?\n //g')
       
-      if [ -n "$debug_mode" ]; then
+      if [[ -n "$debug_mode" ]]; then
         set +x
       fi
       # And that's us done with LDAP
 
 
-    if [ -n "$search_result" ]; then
-      if [ $# -gt 1 ]; then
+    if [[ -n "$search_result" ]]; then
+      if [[ $# -gt 1 ]]; then
         echo "${name#SMTP:}: ${search_result}"
       else
         echo "${search_result}"

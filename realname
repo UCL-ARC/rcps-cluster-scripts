@@ -49,30 +49,30 @@ done
 
 shift $((OPTIND-1));
 
-if [ -z "$lookup_mode" ] && [ ! -x "$LDAPSEARCH_PATH" ]; then
+if [[ -z "$lookup_mode" ]] && [[ ! -x "$LDAPSEARCH_PATH" ]]; then
   echo "Error: this script requires ldapsearch.
   (You might still be able to use ypcat or getent modes.)" >&2
   exit 3
 fi
 
 for name in "$@"; do
-  if [ "${#name}" -ne "7" ] && [ -z "$backwards_mode" ]; then
+  if [[ "${#name}" -ne "7" ]] && [[ -z "$backwards_mode" ]]; then
     echo "Invalid username: \"${name}\"" >&2
     exit 2
   else
-    if [ -n "$debug_mode" ]; then echo "Debug: Searching for '$name'" >&2; fi
-    if [ -z "$lookup_mode" ]; then
-      if [ -z "$backwards_mode" ]; then
+    if [[ -n "$debug_mode" ]]; then echo "Debug: Searching for '$name'" >&2; fi
+    if [[ -z "$lookup_mode" ]]; then
+      if [[ -z "$backwards_mode" ]]; then
         search_key="cn"
         display_key="gecos"
       else
         search_key="gecos"
         display_key="cn"
       fi
-      if [ -n "$mail_search" ]; then
+      if [[ -n "$mail_search" ]]; then
         display_key="mail"
       fi
-      if [ -n "$department_search" ]; then
+      if [[ -n "$department_search" ]]; then
         display_key="department"
       fi
 
@@ -85,62 +85,63 @@ for name in "$@"; do
       
       ldap_search_term="(${search_key}=${name})"
 
-      if [ ! -e "$ldap_pass_file" ]; then
+      if [[ ! -e "$ldap_pass_file" ]]; then
           echo "Exiting because LDAP password file does not exist: $ldap_pass_file" >&2
           exit 6
       fi
-      if [ ! -r "$ldap_pass_file" ]; then
+      if [[ ! -r "$ldap_pass_file" ]]; then
           echo "Exiting because LDAP password file is not readable at: $ldap_pass_file" >&2
           exit 5
       fi
 
-      if [ -n "$debug_mode" ]; then
+      if [[ -n "$debug_mode" ]]; then
         echo "Debug: ldap_rdn: $ldap_rdn"
         ldap_search_args=("-d5" "-vvv" "-x" "-LLL" "-y$ldap_pass_file" "-H$ldap_uri" "-D$ldap_rdn" "-b$ldap_bind_user" "$ldap_search_term")
       else
         ldap_search_args=("-x" "-LLL" "-y$ldap_pass_file" "-H$ldap_uri" "-D$ldap_rdn" "-b$ldap_bind_user" "$ldap_search_term")
       fi
 
-      if [ -n "$debug_mode" ]; then 
+      if [[ -n "$debug_mode" ]]; then 
         echo "Debug: ldapsearch path is: $LDAPSEARCH_PATH" >&2
         echo "Debug: ldapsearch arguments are: ${ldap_search_args[*]}" >&2
       fi
 
-      if [ -n "$debug_mode" ]; then
+      if [[ -n "$debug_mode" ]]; then
         set -x
       fi
 
       search_result=$($LDAPSEARCH_PATH "${ldap_search_args[@]}" | sed -rn "s/^${display_key}: (.+)$/\1/p" )
       
-      if [ -n "$debug_mode" ]; then
+      if [[ -n "$debug_mode" ]]; then
         set +x
       fi
       # And that's us done with LDAP
 
-    elif [ "$lookup_mode" = "getent" ]; then
-      if [ -z "$backwards_mode" ]; then
+    elif [[ "$lookup_mode" = "getent" ]]; then
+      if [[ -z "$backwards_mode" ]]; then
+        #shellcheck disable=2029 # ignore warning about $name expanding on client side
         search_result=$(ssh socrates.ucl.ac.uk "getent passwd $name" 2>/dev/null | awk -F: '{print $5;}')
       else 
         search_result=$(ssh socrates.ucl.ac.uk "getent passwd" 2>/dev/null | awk -F: '{print $5 ":" $1;}' | grep "$name" | awk -F: '{print $2;}')
       fi
-    elif [ "$lookup_mode" = "ypcat" ]; then
-      if [ -z "$backwards_mode" ]; then
+    elif [[ "$lookup_mode" = "ypcat" ]]; then
+      if [[ -z "$backwards_mode" ]]; then
         search_result=$(ssh socrates.ucl.ac.uk "/usr/local/rbin/ypcat passwd" 2>/dev/null | awk -F: '{print $1 ":" $5;}' | grep "^$name" 2>/dev/null | awk -F: '{print $2;}')
       else 
         search_result=$(ssh socrates.ucl.ac.uk "/usr/local/rbin/ypcat passwd" 2>/dev/null | awk -F: '{print $5 ":" $1;}' | grep "$name" 2>/dev/null  | awk -F: '{print $2;}')
       fi
     fi
 
-    if [ -n "$search_result" ]; then
-      if [ $# -gt 1 ]; then
+    if [[ -n "$search_result" ]]; then
+      if [[ $# -gt 1 ]]; then
         echo "${name}: ${search_result}"
       else
         echo "${search_result}"
       fi
-    elif [ -n "$mail_search" ]; then
+    elif [[ -n "$mail_search" ]]; then
       echo "No mail address found for username \"${name}\"" >&2
       exit 8
-    elif [ -n "$department_search" ]; then
+    elif [[ -n "$department_search" ]]; then
       echo "Warning: no department found for username \"${name}\" -- returning None/Unknown" >&2
       echo "None/Unknown"
     else
