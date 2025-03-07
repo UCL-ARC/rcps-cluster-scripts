@@ -8,4 +8,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Run ShellCheck
-      run: "grep -r -m 1 '^#!.*sh\\b' * | cut -f 1 -d : | xargs shellcheck"
+      run: "grep -r -m 1 '^#!.*sh\\b' * | cut -f 1 -d : | xargs shellcheck --color=always --enable=require-double-brackets,deprecate-which"
