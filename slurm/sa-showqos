@@ -1,0 +1,4 @@
+#!/bin/sh
+exec sacctmgr show qos \
+  format='name%-10,priority%4,mintres%-12,maxtres%-12,flags%-30,maxjobsperuser,grpjobs,maxsubmit' \
+  "$@"

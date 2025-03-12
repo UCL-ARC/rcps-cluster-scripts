@@ -1,0 +1,4 @@
+#!/bin/sh
+exec sacctmgr show assoc \
+  format='account%-10,user%-8,qos%-60,share,maxsubmit' \
+  "$@"

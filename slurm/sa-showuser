@@ -1,0 +1,4 @@
+#!/bin/sh
+exec sacctmgr show user \
+  format='user%-8,defaultaccount%-10,admin%-16' \
+  "$@"
