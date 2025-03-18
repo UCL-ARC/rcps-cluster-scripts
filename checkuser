@@ -130,9 +130,8 @@ function slurm_check_nosub () {
     local maxsubmitjob
 
     echo -n "Checking whether user has been blocked from submitting jobs: "
-    maxsubmitjob="$(sacctmgr show assoc \
-        where account="$account" user="$username" --noheader format='maxsubmitjob' \
-        | tr -d ' ')"
+    maxsubmitjob="$(sacctmgr show assoc --noheader --parsable2 \
+        where account="$account" user="$username" format='maxsubmitjob')"
     if [[ "$maxsubmitjob" == '0' ]]; then
         echo "${RED}yes${RESET}"
     else
