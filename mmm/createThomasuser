@@ -53,31 +53,32 @@ while getopts ":hu:e:k:nm:c:" opt; do
 done
 
 # make sure all arguments are supplied (checks for unset or empty)
-if [ ! "$username" ] || [ ! "$email" ] || [ ! "$ssh_key" ]
+if [[ ! "$username" ]] || [[ ! "$email" ]] || [[ ! "$ssh_key" ]]
 then
   usage
   exit 1
 fi
 
 # become user, create ssh directory and add key
-echo $(date) ": Becoming ${username}, creating ssh dir and adding key"
-become_output=$(sudo /shared/ucl/sysops/libexec/become $username <<EOF
+echo "$(date) : Becoming ${username}, creating ssh dir and adding key"
+become_output=$(sudo /shared/ucl/sysops/libexec/become "$username" <<EOF
 echo "Beacon"
 mkdir -p .ssh
 chmod go-rwx .ssh
 echo "${ssh_key}" >> ~/.ssh/authorized_keys
 EOF
 )
+# shellcheck disable=2034 # feel like we *should* capture this but not sure what to do with it yet
 become_exit_status=$?
-if [ "${become_output:0:6}" != "Beacon" ]; then
-  echo $(date) ": Error: could not become user ${username}" >&2
+if [[ "${become_output:0:6}" != "Beacon" ]]; then
+  echo "$(date) : Error: could not become user ${username}" >&2
   exit 1
 fi
 
 # add user to ACL so they can log in and submit jobs
 if ! qconf -au "$username" "$ACL"
 then
-  echo $(date) ": Adding ${username} to $ACL ACL failed, exiting." >&2 
+  echo "$(date) : Adding ${username} to $ACL ACL failed, exiting." >&2 
   exit 1
 fi
 
@@ -85,18 +86,18 @@ fi
 # Try 3 times.
 for i in 1 2 3
 do
-  qconf -su "$ACL" | grep -q "$username"
-  if [ $? == 0 ]
+  
+  if qconf -su "$ACL" | grep -q "$username"
   then
     echo ""
-    echo $(date) ": Successfully allowed ${username} to log in"
+    echo "$(date) : Successfully allowed ${username} to log in"
     break
-  elif (( $i < 3 ))
+  elif [[ "$i" -lt 3 ]]
   # failed, try again
   then 
     sleep 5
   else
-    echo $(date) ": Grid Engine failed to add ${username} to $ACL ACL three times - please contact rc-support@ucl.ac.uk" >&2
+    echo "$(date) : Grid Engine failed to add ${username} to $ACL ACL three times - please contact rc-support@ucl.ac.uk" >&2
     exit 1
   fi
 done
@@ -111,7 +112,7 @@ Subject: subscribe address=${email}
 EOF
 
 # email welcome to user, unless do_not_mail was set
-if [ ! "$do_not_mail" ] 
+if [[ ! "$do_not_mail" ]] 
 then
   echo "  Emailing user ${username} at ${email}"
   /usr/sbin/sendmail -t<<EOF
