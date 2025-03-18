@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 
+set -o errexit \
+    -o nounset \
+    -o pipefail
+
 usage() {
   printf "Usage: %s\n  creates a base configuration file for iRODS for UCL Research Data storage.\n" "$0"
 }
 
-if [ "$1" = "-h" -o "$1" = "--help" ]; then
+if [[ "${1:-}" = "-h" ]] || [[ "${1:-}" = "--help" ]]; then
   usage
   exit
-elif [ "$1" = "-q" -o "$1" = "--quiet" ]; then
+elif [[ "${1:-}" = "-q" ]] || [[ "${1:-}" = "--quiet" ]]; then
   quiet_mode="y"
-elif [ "$#" -gt 0 ]; then
+elif [[ "$#" -gt 0 ]]; then
   usage
   exit 1
 fi
@@ -17,14 +21,14 @@ fi
 
 irods_env_file="$HOME/.irods/irods_environment.json"
 
-if [[ -a "$irods_env_file" ]] && [[ -z "$quiet_mode" ]]; then
+if [[ -a "$irods_env_file" ]] && [[ -z "${quiet_mode:-}" ]]; then
   printf "Warning: you already have an iRODS configuration file in:\n  %s\n\n" "$irods_env_file" >&2
  
   if [[ -t 0 || -p /dev/stdin ]]; then # terminal is interactive
     read -r -n 1 -p "Would you like to replace it? (a backup will be made) (yN) "  replace_file
     echo
 
-    if [ "${replace_file,,}" != "y" ]; then
+    if [[ "${replace_file,,}" != "y" ]]; then
       exit 1
     fi
   else
@@ -32,7 +36,7 @@ if [[ -a "$irods_env_file" ]] && [[ -z "$quiet_mode" ]]; then
   fi
 fi
 
-if [ -z "$IRODS_PLUGINS_DIR" ]; then
+if [[ -z "${IRODS_PLUGINS_DIR:-}" ]]; then
   echo "Fatal Error: variable IRODS_PLUGINS_DIR not set." >&2
   exit 2
 fi
@@ -50,13 +54,13 @@ template="{
 }
 "
 
-if [ ! -d "$HOME/.irods" ]; then
+if [[ ! -d "$HOME/.irods" ]]; then
   mkdir "$HOME/.irods"
 fi
 
-if [ -a "$irods_env_file" ]; then
+if [[ -a "$irods_env_file" ]]; then
   backup_index=1
-  while [ -a "${irods_env_file}.bak.${backup_index}" ]; do
+  while [[ -a "${irods_env_file}.bak.${backup_index}" ]]; do
     backup_index=$(( backup_index + 1 ))
   done
   mv "$irods_env_file" "${irods_env_file}.bak.${backup_index}"
