@@ -111,6 +111,7 @@ function main() {
         schedule_files=("${first_arg#--schedule-file=}")
         shift
     elif [[ "${first_arg}" == "--all" ]]; then
+        #shellcheck disable=2207 # I think this is safe in this case -- or if it isn't, someone has screwed up a lot
         schedule_files=($(/bin/ls -f "$schedule_dir"/schedule "$schedule_dir"/schedule-????????.gz) $(/bin/ls -f "$schedule_dir"/schedule-????????.*.xz))
         shift
     elif [[ "${first_arg:0:11}" == "--daysback=" ]]; then
@@ -119,6 +120,7 @@ function main() {
         days=0
         while [[ $days -le $num_days ]]; do
             dated_file_stem="$schedule_dir/schedule-$(date --date="$days days ago" +%Y%m%d)"
+            #shellcheck disable=2207 # I think this is safe in this case -- or if it isn't, someone has screwed up a lot
             schedule_files+=($(/bin/ls -f "$dated_file_stem"* 2>/dev/null))
             days=$(( days + 1 ))
         done
