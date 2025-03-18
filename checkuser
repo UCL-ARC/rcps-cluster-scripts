@@ -15,6 +15,19 @@ BLUE="$(tput setaf 4)"
 RED="$(tput setaf 1)"
 RESET="$(tput sgr0)"
 
+function _green() {
+    echo "${GREEN}$*${RESET}"
+}
+function _red() {
+    echo "${RED}$*${RESET}"
+}
+function _blue() {
+    echo "${BLUE}$*${RESET}"
+}
+
+
+### Section: Identity
+
 if [[ "$username" =~ ^[^[:space:]]+@ucl\.ac\.uk$ ]]; then
     echo "${RED}Warning: this username looks like an email address.${RESET}"
     echo "${RED}         It will be checked and converted.${RESET}"
@@ -43,6 +56,8 @@ else
 fi
 
 echo "" # Blank line for section separation
+
+### Section: Scheduler Registration
 
 function sge_check_acls() {
     local access_group
@@ -199,54 +214,93 @@ fi
 
 echo "" # Blank line for section separation
 
+
+### Section: Filesystems
+
+# These skip checks that depend on certain dirs existing
+flag_has_no_homedir=n
+flag_has_no_scratch=n
+flag_has_no_acfs=n
+
 echo -n "Checking whether user has a home directory: "
 if stat --printf='' "/home/${username}" 2>/dev/null
 then
   echo "${GREEN}yes${RESET}"
 else
   echo "${RED}no${RESET}"
+  flag_has_no_homedir=y
 fi
 
 echo -n "Checking whether user has a scratch directory: "
 if stat --printf='' "/scratch/scratch/${username}" 2>/dev/null
 then
   echo "${GREEN}yes${RESET}"
-  flag_has_no_scratch=n
 else
   echo "${RED}no${RESET}"
   flag_has_no_scratch=y
 fi
 
-echo -n "Checking whether home directory is *owned* by that user: "
-owner="$(stat --printf=%U "/home/${username}" 2>/dev/null)"
-if [[ "$owner" == "$username" ]]
+echo -n "Checking whether user has an acfs directory: "
+if stat --printf='' "/acfs/users/${username}" 2>/dev/null
 then
-  echo "${GREEN}yes${RESET}"
+    echo "${GREEN}yes${RESET}"
 else
-  echo "${RED}no${RESET}"
+    echo "${RED}no${RESET}"
+    flag_has_no_acfs=y
 fi
 
-echo -n "Checking whether scratch directory is *owned* by that user: "
-owner="$(stat --printf=%U "/scratch/scratch/${username}" 2>/dev/null)"
-if [[ "$flag_has_no_scratch" == "n" ]]
-then
+echo -n "Checking whether home directory is *owned* by that user: "
+if [[ "$flag_has_no_homedir" == "n" ]]; then
+    owner="$(stat --printf=%U "/home/${username}" 2>/dev/null)"
     if [[ "$owner" == "$username" ]]
     then
-      echo "${GREEN}yes${RESET}"
+        echo "${GREEN}yes${RESET}"
     else
-      echo "${RED}no${RESET}"
+        echo "${RED}no${RESET}"
     fi
 else
     echo "${BLUE}skipped${RESET}"
 fi
 
-echo -n "Checking whether home directory is usable by owner: "
-perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
-if [[ "${perms:1:3}" =~ rwx ]]
+echo -n "Checking whether scratch directory is *owned* by that user: "
+if [[ "$flag_has_no_scratch" == "n" ]]
 then
-    echo "${GREEN}yes${RESET}"
-else 
-    echo "${RED}no: perms are ${perms}${RESET}"
+    owner="$(stat --printf=%U "/scratch/scratch/${username}" 2>/dev/null)"
+    if [[ "$owner" == "$username" ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else
+        echo "${RED}no${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
+fi
+
+echo -n "Checking whether acfs directory is *owned* by that user: "
+if [[ "$flag_has_no_acfs" == "n" ]]; then
+    owner="$(stat --printf=%U "/acfs/users/${username}" 2>/dev/null)"
+    if [[ "$owner" == "$username" ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else
+        echo "${RED}no${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
+fi
+
+
+echo -n "Checking whether home directory is usable by owner: "
+if [[ "$flag_has_no_homedir" == "n" ]]; then
+    perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
+    if [[ "${perms:1:3}" =~ rwx ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else 
+        echo "${RED}no: perms are ${perms}${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
 fi
 
 echo -n "Checking whether scratch directory is usable by owner: "
@@ -263,14 +317,33 @@ else
     echo "${BLUE}skipped${RESET}"
 fi
 
-echo -n "Checking whether home directory has standard permissions: "
-perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
-if [[ "${perms}" == "drwx------" ]];
-then
-    echo "${GREEN}yes${RESET}"
-else 
-    echo "${RED}no: perms are ${perms}${RESET}"
+echo -n "Checking whether acfs directory is usable by owner: "
+if [[ "$flag_has_no_acfs" == "n" ]]; then
+    perms="$(stat --printf=%A "/acfs/users/${username}" 2>/dev/null)"
+    if [[ "${perms:1:3}" =~ rwx ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else 
+        echo "${RED}no: perms are ${perms}${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
 fi
+
+echo -n "Checking whether home directory has standard permissions: "
+if [[ "$flag_has_no_homedir" == "n" ]]; then
+    perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
+    if [[ "${perms}" == "drwx------" ]];
+    then
+        echo "${GREEN}yes${RESET}"
+    else 
+        echo "${RED}no: perms are ${perms}${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
+fi
+
+### Section: User Activity
 
 echo ""
 
