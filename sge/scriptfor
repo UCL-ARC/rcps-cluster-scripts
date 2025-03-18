@@ -34,7 +34,7 @@ echo "
 }
 
 
-if [ -z "$1" ]  ; then
+if [[ -z "$1" ]]; then
     Usage
     exit 1
 fi
@@ -126,7 +126,7 @@ while [[ -n "${1:-}" ]]; do
     shift
 done
 
-if [ ${#files_found[*]} -eq 0 ]; then
+if [[ ${#files_found[*]} -eq 0 ]]; then
     echo "No job scripts found.">&2
     exit 5
 fi
