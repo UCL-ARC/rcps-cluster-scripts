@@ -1,4 +1,0 @@
-#!/bin/sh
-exec sacctmgr show account \
-  format='account%-10,org%-8,coordinators%-9,descr%-60' \
-  "$@"

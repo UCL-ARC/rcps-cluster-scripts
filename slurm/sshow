@@ -4,7 +4,7 @@ set -o errexit \
     -o nounset \
     -o pipefail
 
-if ! command -v sacctmgr; then
+if ! command -v sacctmgr &>/dev/null; then
     >&2 \
     printf "Error: no sacctmgr found, cannot do anything"
     exit 1
@@ -13,14 +13,20 @@ fi
 function usage() {
     >&2 \
     printf "
-%s - a wrapper around sacctmgr, to simplify common ops
+%s - a wrapper around Slurm tools, to simplify common ops
 
 Subcommands:
 
-  account  - accounts with orgs and coordinators
-  assoc    - associations with users
-  qos      - qos details
-  user     - usernames with their default account and admin status
+  account  - accounts with orgs and coordinators (sacctmgr)
+  assoc    - associations with users (sacctmgr)
+  qos      - qos details (sacctmgr)
+  user     - usernames with their default account and admin status (sacctmgr)
+  node     - nodes with their current state and load (sinfo)
+  job      - current jobs (squeue)
+  jobhist  - past jobs (sacct)
+
+You can pass additional options to the underlying tools. Please refer to the
+corresponding man pages.
 
 " \
     "$(basename "$0")"
@@ -54,6 +60,21 @@ case "$subcmd" in
     "user")
         exec sacctmgr show user \
           format='user%-8,defaultaccount%-10,admin%-16' \
+          "$@"
+        ;;
+    "node")
+        exec sinfo --Node \
+          --Format 'NodeHost:16,Available:6,CPUsState:14,CPUsLoad:.8,Memory:.8 ,FreeMem:.8 ,StateCompact:8,Reason:40' \
+          "$@"
+        ;;
+    "jobhist")
+        exec sacct --allocations --duplicates \
+          --format 'jobid%8,user%-8,account%-10,qos%-10,state%-10,start%19,elapsed%10,ncpus%5,exitcode,jobname%-24' \
+          "$@"
+        ;;
+    "job")
+        exec squeue \
+          --Format 'jobid:.8 ,username:8 ,account:10 ,qos:10 ,state:10 ,starttime:.19 ,timeused:.10 ,numcpus:.5 ,priority:.10 ,name:24' \
           "$@"
         ;;
     *)
