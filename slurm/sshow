@@ -1,0 +1,69 @@
+#!/bin/bash
+
+set -o errexit \
+    -o nounset \
+    -o pipefail
+
+if ! command -v sacctmgr; then
+    >&2 \
+    printf "Error: no sacctmgr found, cannot do anything"
+    exit 1
+fi
+
+function usage() {
+    >&2 \
+    printf "
+%s - a wrapper around sacctmgr, to simplify common ops
+
+Subcommands:
+
+  account  - accounts with orgs and coordinators
+  assoc    - associations with users
+  qos      - qos details
+  user     - usernames with their default account and admin status
+
+" \
+    "$(basename "$0")"
+}
+
+if [[ "$#" -lt 1 ]]; then
+    usage
+    exit 1
+fi
+
+subcmd="$1"
+shift
+
+case "$subcmd" in
+    # These are all very simple at the moment. If they get complicated, split them out into a function.
+    "account")
+        exec sacctmgr show account \
+          format='account%-10,org%-8,coordinators%-9,descr%-60' \
+          "$@"
+        ;;
+    "assoc")
+        exec sacctmgr show assoc \
+          format='account%-10,user%-8,qos%-60,share,maxsubmit' \
+          "$@"
+        ;;
+    "qos")
+        exec sacctmgr show qos \
+          format='name%-10,priority%4,mintres%-12,maxtres%-12,flags%-30,maxjobsperuser,grpjobs,maxsubmit' \
+          "$@"
+        ;;
+    "user")
+        exec sacctmgr show user \
+          format='user%-8,defaultaccount%-10,admin%-16' \
+          "$@"
+        ;;
+    *)
+        # This implements something like git's handling of scripts named e.g. git-thing
+        if command -v "sshow-$subcmd"; then
+            exec "sshow-$subcmd" "$@"
+        else
+            printf "Error: unrecognised subcommand: %s\n" "$subcmd" >&2
+            exit 1
+        fi
+        ;;
+esac
+
