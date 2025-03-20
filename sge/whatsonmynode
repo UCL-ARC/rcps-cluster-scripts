@@ -1,16 +1,16 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
+if [[ -z "$1" ]]; then
   echo "Usage: ${0##*/} <project regex>" >&2
   exit 1
 fi
 
 OwnedNodeList=$(awk -F: /:"$1":/'{print $1}' </opt/geassist/etc/nodeowners)
 
-if [ -z "$OwnedNodeList" ]; then
+if [[ -z "$OwnedNodeList" ]]; then
   echo "No nodes found for project pattern \"$1\"." >&2
   exit 2
 else
-  qhost -j -h $OwnedNodeList
+  qhost -j -h "${OwnedNodeList// /,}"
 fi
 
