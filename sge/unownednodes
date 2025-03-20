@@ -27,8 +27,7 @@ do
     online_nodes+=(["$node_type"]="$node_count")
 done
 
-for l in $(cat /opt/geassist/etc/nodeowners \
-            | grep -o node-. \
+for l in $(grep -o node-. /opt/geassist/etc/nodeowners \
             | uniq -c \
             | awk '{ print $1":"$2 }' \
             );

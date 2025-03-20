@@ -76,7 +76,7 @@ fi
 if [[ -n "$dest_id" ]]
 then
     gtransfer_args+=" --toAccount $dest_id"
-elif [[ ! -z "$dest_project_code" ]]
+elif [[ -n "$dest_project_code" ]]
 then
     gtransfer_args+=" --toProject $dest_project_code"
 else

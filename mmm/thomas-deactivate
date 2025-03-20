@@ -2,7 +2,7 @@
 # wrapper for python3 thomas script
 
 # Source global definitions
-if [ -f /etc/bashrc ]; then
+if [[ -f /etc/bashrc ]]; then
         . /etc/bashrc
 fi
 
@@ -13,5 +13,5 @@ module load mysql-connector-python/2.0.4/python-3.6.3
 
 # get script location
 DIR=$(dirname "$(readlink -f "$0")")
-$DIR/thomas/thomas_deactivate.py "$@"
+"$DIR/thomas/thomas_deactivate.py" "$@"
 
