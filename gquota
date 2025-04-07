@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Define the fixed filesystem
+filesystem="myriadfs"
+
+# Get the username of the current user
+fileset=$(whoami)
+
+# Run the mmlsquota command and convert the output to gigabytes
+/usr/lpp/mmfs/bin/mmlsquota -j $fileset $filesystem | tail -n 1 |
+awk '{printf "Current Usage: %.1fGiB\nSoft Limit: %.0fGiB\nHard Limit: %.0fGiB\n", $3/1048576, $4/1048576, $5/1048576}'
