@@ -608,7 +608,7 @@ function __main() {
         "myriad")
             msg debug "using settings for myriad"
             local quota_mode="project"
-            local -A pools=([home]="/home/%username%" [scratch]="/scratch/scratch/%username%")
+            local -A pools=([home]="/lustre/home/%username%" [scratch]="/lustre/scratch/scratch/%username%")
             ;;
         "kathleen")
             msg debug "using settings for kathleen"
