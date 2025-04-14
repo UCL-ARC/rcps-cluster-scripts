@@ -1,0 +1,102 @@
+#!/bin/bash
+
+set -o errexit \
+    -o nounset \
+    -o pipefail \
+    -o noclobber
+
+function print_usage() {
+    local bn="${0##*/}"
+    printf "
+    Usage: %s [job_ident]
+
+    Searches the kernel ring buffer (via dmesg) for any output from
+     the out-of-memory kill handler having killed a process in a job's
+     cgroup.
+
+    If no job ident is provided, it will default to job_id.task_id.
+    
+    (task_id = \"unspecified\" if not an array job)
+
+    If two OOM kills happen in different job cgroups within a 3-second
+     window, this tool will inadvertently print them both for each job.
+    Avoiding this would make everything *much* more complicated.
+\n" "$bn"
+}
+
+# There's an SGE_UCL_JIDENT variable, but in non-array jobs the task ID section
+#  is "0", not "undefined". So we'll put it together ourselves.
+
+job_ident=""
+
+if [[ "$#" -eq 0 ]]; then
+    if [[ "${JOB_ID:-}" == "" ]] || [[ "${SGE_TASK_ID:-}" == "" ]]; then
+        echo "Error: this script is intended to be run in a job environment, but JOB_ID and/or SGE_TASK_ID were not set." >&2
+        exit 1
+    fi
+    job_ident="$JOB_ID.$SGE_TASK_ID"
+fi
+
+if [[ "$#" -eq 1 ]]; then
+    if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+        print_usage
+        exit 0
+    fi
+
+    if [[ "$1" =~ [0-9][0-9]*\.undefined ]] || [[ "$1" =~ [0-9][0-9]*\.[0-9][0-9]* ]]; then
+        job_ident="$1"
+    fi
+fi
+
+if [[ "$#" -ge 1 ]]; then
+    print_usage >&2
+    exit 1
+fi
+                
+
+# We assume everything that happened on the same second as a task being killed is relevant
+# We get the second it happened,
+# then everything that happened that second
+
+
+# This extracts a date in the format:
+# [Wed May  1 11:03:05 2024]
+# Or [%a %b %e %H:%M:%S %Y] in strftime format
+# It's not the strictest it could be, to keep it even vaguely understandable within grep regexes
+function extract_date() {
+    grep -o '^\[[A-Z][a-z][a-z] [A-Z][a-z][a-z] [ 0-9][0-9] [0-2][0-9]:[0-5][0-9]:[0-6][0-9] 20[0-2][0-9]\]' \
+        | tr -d '[]' \
+        | add_window
+}
+
+# This takes a date in the format above and adds the dates 1,2 seconds before and after
+# The OOM messages typically happen over 1 or 2 seconds and this ensures we catch them all
+function add_window() {
+    sed -e 's/^\(.*\) *$/date --date="\1 - 2 seconds" +"%a %b %e %H:%M:%S %Y"; date --date="\1 - 1 second" +"%a %b %e %H:%M:%S %Y";printf "%s\n" "\1"; date --date="\1 + 1 second" +"%a %b %e %H:%M:%S %Y"; date --date="\1 + 2 seconds" +"%a %b %e %H:%M:%S %Y"/e'
+}
+
+# This is to let us substitute the source for testing
+function dmesg_get() {
+    dmesg -T
+}
+
+function dmesg_get_err() {
+    dmesg -T -l err
+}
+
+function transform_kill_line() {
+    # I'm pretty sure this anon-rss number is per-cgroup, not per-process, after some testing.
+    sed -ne 's/^\(\[[^]]*\]\).*Killed process [0-9]* (\(.*\)), .*, anon-rss:\([0-9]*\)kB,.*$/\1 OOM KILL: Process named \2 was killed, job attempting to use RAM: \3 kB (anon-rss)/p'
+}
+
+oom_times="$(dmesg_get \
+                | grep -F -e "Task in /UCL/$job_ident killed as a result of limit" \
+                | extract_date \
+                )"
+
+if [[ "$oom_times" != "" ]]; then
+    dmesg_get_err \
+        | grep -F -e "$oom_times" \
+        | transform_kill_line
+fi
+
