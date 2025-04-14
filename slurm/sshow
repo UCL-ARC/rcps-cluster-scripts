@@ -1,0 +1,100 @@
+#!/bin/bash
+
+set -o errexit \
+    -o nounset \
+    -o pipefail
+
+function check_command () {
+    local cmd="$1"
+    if ! command -v "$cmd" &>/dev/null; then
+        >&2 \
+        printf "Error: no ${cmd} found, cannot do anything"
+        exit 1
+     fi
+}
+
+function usage() {
+    >&2 \
+    printf "
+%s - a wrapper around Slurm tools, to simplify common ops
+
+Subcommands:
+
+  account  - accounts with orgs and coordinators (sacctmgr)
+  assoc    - associations with users (sacctmgr)
+  qos      - qos details (sacctmgr)
+  user     - usernames with their default account and admin status (sacctmgr)
+  node     - nodes with their current state and load (sinfo)
+  job      - current jobs (squeue)
+  jobhist  - past jobs (sacct)
+
+You can pass additional options to the underlying tools. Please refer to the
+corresponding man pages.
+
+" \
+    "$(basename "$0")"
+}
+
+if [[ "$#" -lt 1 ]]; then
+    usage
+    exit 1
+fi
+
+subcmd="$1"
+shift
+
+case "$subcmd" in
+    # These are all very simple at the moment. If they get complicated, split them out into a function.
+    "account")
+        check_command sacctmgr
+        exec sacctmgr show account \
+          format='account%-10,org%-8,coordinators%-9,descr%-60' \
+          "$@"
+        ;;
+    "assoc")
+        check_command sacctmgr
+        exec sacctmgr show assoc \
+          format='account%-10,user%-8,qos%-60,share,maxsubmit' \
+          "$@"
+        ;;
+    "qos")
+        check_command sacctmgr
+        exec sacctmgr show qos \
+          format='name%-10,priority%4,mintres%-12,maxtres%-12,flags%-30,maxjobsperuser,grpjobs,maxsubmit' \
+          "$@"
+        ;;
+    "user")
+        check_command sacctmgr
+        exec sacctmgr show user \
+          format='user%-8,defaultaccount%-10,admin%-16' \
+          "$@"
+        ;;
+    "node")
+        check_command sinfo
+        exec sinfo --Node \
+          --Format 'NodeHost:16,Available:6,CPUsState:14,CPUsLoad:.8,Memory:.8 ,FreeMem:.8 ,StateCompact:8,Reason:40' \
+          "$@"
+        ;;
+    "jobhist")
+        check_command sacct
+        exec sacct --allocations --duplicates \
+          --format 'jobid%8,user%-8,account%-10,qos%-10,state%-10,start%19,elapsed%10,ncpus%5,exitcode,jobname%-24' \
+          "$@"
+        ;;
+    "job")
+        check_command squeue
+        exec squeue \
+          --Format 'jobid:.8 ,username:8 ,account:10 ,qos:10 ,state:10 ,starttime:.19 ,timeused:.10 ,numcpus:.5 ,priority:.10 ,name:24' \
+          "$@"
+        ;;
+    *)
+        # This implements something like git's handling of scripts named e.g. git-thing
+        if command -v "sshow-$subcmd"; then
+            exec "sshow-$subcmd" "$@"
+        else
+            printf "Error: unrecognised subcommand: %s\n" "$subcmd" >&2
+            exit 1
+        fi
+        ;;
+esac
+
