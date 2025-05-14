@@ -4,11 +4,8 @@ import os.path
 import sys
 import configparser
 import argparse
-import subprocess
-import validate
 import mysql.connector
 from mysql.connector import errorcode
-from tabulate import tabulate
 import json
 import requests
 import safe_json_decoder as decoder
@@ -51,7 +48,7 @@ def getopentickets(config):
         try:
             data = request.json()
             return data
-        except json.decoder.JSONDecodeError as err:
+        except json.decoder.JSONDecodeError as _:
             print("Received invalid json, contents: " + str(request.content))
             exit(1)
     else:

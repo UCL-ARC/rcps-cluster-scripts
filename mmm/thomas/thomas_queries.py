@@ -13,7 +13,7 @@
 def adduser(surname):
     query = ("""INSERT INTO users SET username=%(username)s, givenname=%(given_name)s, 
                  email=%(email)s, ssh_key=%(ssh_key)s, status=%(status)s, creation_date=now()""")
-    if (surname != None):
+    if (surname is not None):
         query += ", surname=%(surname)s"
     return query
 
@@ -34,9 +34,9 @@ def addpoc(surname, username):
     query = ("""INSERT INTO pointofcontact SET poc_id=%(poc_id)s, 
                  poc_givenname=%(given_name)s, poc_email=%(email)s,  
                  institute=%(inst_ID)s, status=%(status)s, creation_date=now()""")
-    if (surname != None):
+    if (surname is not None):
         query += ", poc_surname=%(surname)s"
-    if (username != None):
+    if (username is not None):
         query += ", username=%(username)s"
     return query
 

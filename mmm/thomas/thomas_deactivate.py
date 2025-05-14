@@ -3,13 +3,9 @@
 import os.path
 import argparse
 import sys
-from email.mime.text import MIMEText
-import subprocess
-from subprocess import Popen, PIPE
 import mysql.connector
 from mysql.connector import errorcode
 from contextlib import closing
-import socket
 import validate
 #import thomas_show
 import thomas_utils
@@ -138,6 +134,15 @@ def deactivate_user_request(cursor, args, args_dict):
 # end deactivate_user_request
 
 
+# Stubs for functions called elsewhere but not yet implemented
+def run_deactivaterequest(*args):
+    raise NotImplementedError
+
+def run_poc(*args):
+    raise NotImplementedError
+
+def run_institute(*args):
+    raise NotImplementedError
 
 
 def debug_cursor(cursor, args):

@@ -76,7 +76,7 @@ def createaccount(args, nodename):
         print("You do not appear to be on a supported cluster: nodename is "+nodename, file=sys.stderr)
         exit(1)
 
-    if (args.cc_email != None):
+    if (args.cc_email is not None):
         create_args.extend(['-c', args.cc_email])
     if (args.noemail):
         create_args.append('-n') 
@@ -127,7 +127,7 @@ def create_and_add_user(args, args_dict, cursor, nodename):
     # check the cluster matches the project
     thomas_utils.checkprojectoncluster(args.project_ID, nodename)
     # if nosshverify is not set, verify the ssh key
-    if (args.nosshverify == False):
+    if not args.nosshverify:
         validate.ssh_key(args.ssh_key)
 
     # Check for duplicates and ask.
@@ -137,7 +137,7 @@ def create_and_add_user(args, args_dict, cursor, nodename):
             print("No duplicate users found, continuing.")
 
     # if no username was specified, get the next available mmm username
-    if (args.username == None):
+    if (args.username is None):
         args.username = thomas_utils.getunusedmmm(cursor)
    
     # Check the MMM username exists and warn if getting near max

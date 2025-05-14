@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
-import os.path
 import sys
-import configparser
 import argparse
 #import csv
-import numpy
 import pandas
 
 def getargs(argv):
