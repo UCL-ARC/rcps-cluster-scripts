@@ -312,8 +312,6 @@ def main(argv):
 
     try:
         args = getargs(argv)
-        # make a dictionary from args to make string substitutions doable by key name
-        args_dict = vars(args)
     except ValueError as err:
         print(err)
         exit(1)
