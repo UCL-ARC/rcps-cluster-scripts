@@ -206,6 +206,17 @@ function slurm_check_access () {
     fi
 }
 
+function get_user_scratch_dir () {
+    local username="$1"
+    local clustername
+          clustername="$(/shared/ucl/sysops/libexec/clustname 2>/dev/null || true)"
+
+    case "$clustername" in
+        myriad)   scratch_dir="/home/${username}/Scratch" ;;
+        *)        scratch_dir="/scratch/scratch/${username}" ;;
+    esac
+    echo "${scratch_dir}"
+}
 
 have_sge=""
 have_slurm=""
@@ -238,6 +249,8 @@ flag_has_no_homedir=n
 flag_has_no_scratch=n
 flag_has_no_acfs=n
 
+user_scratch_dir=$(get_user_scratch_dir "$username")
+
 echo -n "Checking whether user has a home directory: "
 if stat --printf='' "/home/${username}" 2>/dev/null
 then
@@ -248,7 +261,7 @@ else
 fi
 
 echo -n "Checking whether user has a scratch directory: "
-if stat --printf='' "/scratch/scratch/${username}" 2>/dev/null
+if stat --printf='' "${user_scratch_dir}" 2>/dev/null
 then
   echo "${GREEN}yes${RESET}"
 else
@@ -281,7 +294,7 @@ fi
 echo -n "Checking whether scratch directory is *owned* by that user: "
 if [[ "$flag_has_no_scratch" == "n" ]]
 then
-    owner="$(stat --printf=%U "/scratch/scratch/${username}" 2>/dev/null)"
+    owner="$(stat --printf=%U "${user_scratch_dir}" 2>/dev/null)"
     if [[ "$owner" == "$username" ]]
     then
         echo "${GREEN}yes${RESET}"
@@ -322,7 +335,7 @@ fi
 echo -n "Checking whether scratch directory is usable by owner: "
 if [[ "$flag_has_no_scratch" == "n" ]]
 then
-    perms="$(stat --printf=%A "/scratch/scratch/${username}" 2>/dev/null)"
+    perms="$(stat --printf=%A "${user_scratch_dir}" 2>/dev/null)"
     if [[ "${perms:1:3}" =~ rwx ]];
     then
         echo  "${GREEN}yes${RESET}"
