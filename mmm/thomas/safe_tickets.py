@@ -178,7 +178,7 @@ def newbudget(cursor, config, args, ticketid):
     thomas_utils.addproject(args, budget_dict, cursor)
 
     # update SAFE and close the ticket
-    updateticket(config, args, updatebudget(ticketid, projectname))
+    updateticket(config, args, updatebudget(ticketid, budget_dict['project_ID']))
     # update ticket status in our DB
     cursor.execute(thomas_queries.updatesafestatus(), {'id':ticketid, 'status':'Completed'})
 # end newbudget
