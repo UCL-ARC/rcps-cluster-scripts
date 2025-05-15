@@ -57,7 +57,7 @@ def ssh_key(key_string):
 
 # Check that this is a UCL user and a username was provided
 def ucl_user(email, username):
-    if ("ucl.ac.uk" in email and username == None):
+    if ("ucl.ac.uk" in email and username is None):
         print ("This is a UCL email address - please provide the user's UCL username with -u USERNAME", file=sys.stderr)
         exit(1)
     if ("ucl.ac.uk" in email and username.startswith("mmm") ):

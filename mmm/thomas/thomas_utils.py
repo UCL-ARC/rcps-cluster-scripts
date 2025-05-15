@@ -1,6 +1,5 @@
 # Utility functions used in multiple places in the thomas tools.
 
-import mysql.connector
 from tabulate import tabulate
 from ldap3 import Server, Connection, ALL
 import socket
@@ -238,7 +237,7 @@ def select_from_list(question, answers_list, default_ans="n"):
 def checkprojectoncluster(project, nodename):
     # If this is a Faraday project and this isn't Michael, ask for confirmation.
     if (project.startswith("Faraday")):
-        if not ("michael" in nodename):
+        if "michael" not in nodename:
             answer = are_you_sure("You are trying to create project "+project+" on "+nodename+" which is not Michael.\n Do you want to continue?", False)
             # they said no, exit
             if not answer:
@@ -256,7 +255,7 @@ def getnodename():
     try:
         with open('/opt/sge/default/common/cluster_name', 'r') as f:
             nodename = f.read().rstrip()
-    except IOError as e:
+    except IOError as _:
         # fall back to getfqdn
         nodename = socket.getfqdn().casefold()
     return nodename

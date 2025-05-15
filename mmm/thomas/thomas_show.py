@@ -224,7 +224,7 @@ def main(argv, printoutput):
             # Get info for the given user, print if running directly.
             # Fetchall removes the rows from the cursor, but the description is still there
             # so the cursor must also be passed to tableprint to print the headers.
-            if (args.user != None):
+            if (args.user is not None):
                 userresults = userinfo(cursor, args_dict).fetchall()
                 if (printoutput):
                     print("All information for {}:".format(args.user))

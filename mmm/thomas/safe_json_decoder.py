@@ -204,7 +204,7 @@ class Person:
                     print("Warning [Person]: Detected unknown key: " + a + ": " + str(PersonDict[a]))
             
             self.Title=PersonDict["Name"]["Title"]
-            if type(self.Title) == type(None):
+            if self.Title is None:
                 self.Title = ""
             self.FirstName=PersonDict["Name"]["Firstname"]
             self.LastName=PersonDict["Name"]["Lastname"]
@@ -244,7 +244,7 @@ def JSONtoTickets(JSONData):
 # Convert JSON data structure to a list of objects
 def JSONDataToTickets(JSONData):
     Tickets = []
-    if type(JSONData) == list:
+    if type(JSONData) is list:
         for a in JSONData:
             Tickets.append(AccountRequest(a))
     else:
@@ -254,7 +254,6 @@ def JSONDataToTickets(JSONData):
 # If this is run directly, process test.json in the current working directory 
 # and print the output as a string.
 if __name__=="__main__":
-    import json
     import sys
 
     filename="test.json"

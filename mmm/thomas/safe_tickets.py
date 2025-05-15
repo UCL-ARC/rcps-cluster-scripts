@@ -4,11 +4,8 @@ import os.path
 import sys
 import configparser
 import argparse
-import subprocess
-import validate
 import mysql.connector
 from mysql.connector import errorcode
-from tabulate import tabulate
 import json
 import requests
 import safe_json_decoder as decoder
@@ -51,7 +48,7 @@ def getopentickets(config):
         try:
             data = request.json()
             return data
-        except json.decoder.JSONDecodeError as err:
+        except json.decoder.JSONDecodeError as _:
             print("Received invalid json, contents: " + str(request.content))
             exit(1)
     else:
@@ -181,7 +178,7 @@ def newbudget(cursor, config, args, ticketid):
     thomas_utils.addproject(args, budget_dict, cursor)
 
     # update SAFE and close the ticket
-    updateticket(config, args, updatebudget(ticketid, projectname))
+    updateticket(config, args, updatebudget(ticketid, budget_dict['project_ID']))
     # update ticket status in our DB
     cursor.execute(thomas_queries.updatesafestatus(), {'id':ticketid, 'status':'Completed'})
 # end newbudget
@@ -315,8 +312,6 @@ def main(argv):
 
     try:
         args = getargs(argv)
-        # make a dictionary from args to make string substitutions doable by key name
-        args_dict = vars(args)
     except ValueError as err:
         print(err)
         exit(1)

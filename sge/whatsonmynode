@@ -12,6 +12,6 @@ if [[ -z "$OwnedNodeList" ]]; then
   echo "No nodes found for project pattern \"$1\"." >&2
   exit 2
 else
-  qhost -j -h "${OwnedNodeList}"
+  qhost -j -h "${OwnedNodeList// /,}"
 fi
 

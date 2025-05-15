@@ -4,16 +4,13 @@ import os.path
 import argparse
 import sys
 from email.mime.text import MIMEText
-import subprocess
 from subprocess import Popen, PIPE
 import csv
 import mysql.connector
 from mysql.connector import errorcode
 from contextlib import closing
-import socket
 import validate
 import thomas_show
-import thomas_create
 import thomas_utils
 import thomas_queries
 
@@ -239,7 +236,7 @@ def create_new_user(cursor, args, args_dict):
     if (args.livedebug):
         print("-- start thomas_add.create_new_user")
     # if no username was specified, get the next available mmm username
-    if (args.username == None or args_dict['username'] == ''):
+    if (args.username is None or args_dict['username'] == ''):
         args.username = nextmmm()
         args_dict['username'] = args.username
     # users status is pending until the request is approved
@@ -356,7 +353,7 @@ def main(argv):
         # and that it wasn't an mmm one.
         validate.ucl_user(args.email, args.username)
         # Unless nosshverify is set, verify the ssh key
-        if (args.nosshverify == False):
+        if (not args.nosshverify):
             validate.ssh_key(args.ssh_key)
             if (args.verbose or args.debug):
                 print("")
@@ -424,12 +421,12 @@ def main(argv):
             # (only email on Thomas)
             if not args.cluster == "thomas":
                 args.nosupportemail = True
-            if (args.subcommand == "user" and args.nosupportemail == False):
+            if (args.subcommand == "user" and not args.nosupportemail):
                 # get the last id added (which is from the requests table)
                 # this has to be run after the commit
                 last_id = cursor.lastrowid
                 contact_rc_support(args, last_id)
-            elif (args.subcommand == "csv" and args.nosupportemail == False):
+            elif (args.subcommand == "csv" and not args.nosupportemail):
                 last_id = cursor.lastrowid
                 contact_rc_support(args, last_id, csv='yes', num=num_users)
 
