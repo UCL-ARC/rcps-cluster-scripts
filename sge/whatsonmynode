@@ -5,7 +5,8 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
-OwnedNodeList=$(awk -F: /:"$1":/'{print $1}' </opt/geassist/etc/nodeowners)
+# This leaves a trailing comma but the qhost -h option doesn't care
+OwnedNodeList=$(awk -F: /:"$1":/'{printf $1 ","}' </opt/geassist/etc/nodeowners)
 
 if [[ -z "$OwnedNodeList" ]]; then
   echo "No nodes found for project pattern \"$1\"." >&2
