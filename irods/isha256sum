@@ -3,7 +3,7 @@
 # Generate and output sha256sums in the same format as iRODs uses.
 # https://docs.irods.org/4.2.0/system_overview/tips_and_tricks/
 
-if [ -n "$1" ]; then
+if [[ -n "$1" ]]; then
   for file in "$@" 
   do
     sum=$(sha256sum "$file" | xxd -r -p | base64)
@@ -11,5 +11,5 @@ if [ -n "$1" ]; then
   done
 else
   echo "Usage: $0 [file 1] [file 2] ..."
-  exit -1
+  exit 1
 fi

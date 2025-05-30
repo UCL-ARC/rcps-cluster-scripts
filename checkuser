@@ -15,6 +15,19 @@ BLUE="$(tput setaf 4)"
 RED="$(tput setaf 1)"
 RESET="$(tput sgr0)"
 
+function _green() {
+    echo "${GREEN}$*${RESET}"
+}
+function _red() {
+    echo "${RED}$*${RESET}"
+}
+function _blue() {
+    echo "${BLUE}$*${RESET}"
+}
+
+
+### Section: Identity
+
 if [[ "$username" =~ ^[^[:space:]]+@ucl\.ac\.uk$ ]]; then
     echo "${RED}Warning: this username looks like an email address.${RESET}"
     echo "${RED}         It will be checked and converted.${RESET}"
@@ -43,6 +56,8 @@ else
 fi
 
 echo "" # Blank line for section separation
+
+### Section: Scheduler Registration
 
 function sge_check_acls() {
     local access_group
@@ -111,17 +126,33 @@ function slurm_check_accounts() {
     local account
     local account_desc
     local -a check_accounts=(allusers)
-    local user_accounts="$(sacctmgr show assoc where user="$username" --noheader format='account%-40')"
+    local user_accounts
+          user_accounts="$(sacctmgr show assoc where user="$username" --noheader format='account%-40')"
 
     for account in "${check_accounts[@]}"; do
         account_desc="$(sacctmgr show account "$account" --json | jq -r '.accounts[].description')"
         echo -n "Checking whether user is in account ${account} (${account_desc}): "
-        if fgrep -qw "${account}" <<< "${user_accounts}"; then
+        if grep -F -qw "${account}" <<< "${user_accounts}"; then
             echo "${GREEN}yes${RESET}"
         else
             echo "${RED}no${RESET}"
         fi
     done
+}
+
+function slurm_check_nosub () {
+    local username="$1"
+    local account='allusers'
+    local maxsubmitjob
+
+    echo -n "Checking whether user has been blocked from submitting jobs: "
+    maxsubmitjob="$(sacctmgr show assoc --noheader --parsable2 \
+        where account="$account" user="$username" format='maxsubmitjob')"
+    if [[ "$maxsubmitjob" == '0' ]]; then
+        echo "${RED}yes${RESET}"
+    else
+        echo "${GREEN}no${RESET}"
+    fi
 }
 
 function sge_check_access () {
@@ -142,9 +173,10 @@ function sge_check_access () {
 
 function slurm_check_access () {
     local username="$1"
-    local clustername="$(/shared/ucl/sysops/libexec/clustname 2>/dev/null || true)"
     local pag
     local user_groups
+    local clustername
+          clustername="$(/shared/ucl/sysops/libexec/clustname 2>/dev/null || true)"
 
     echo -n "Checking whether user is in the platform access group: "
     if [[ -z "$clustername" ]]; then
@@ -164,7 +196,7 @@ function slurm_check_access () {
     esac
     if user_groups="$(groups "$username" 2>&1)"; then
         user_groups="${user_groups#*:}"
-        if fgrep -qw "$pag" <<< "$user_groups"; then
+        if grep -F -qw "$pag" <<< "$user_groups"; then
             echo "${GREEN}yes${RESET} ($pag)"
         else
             echo "${RED}no${RESET}"
@@ -191,11 +223,20 @@ if [[ -n "$have_sge" ]]; then
 elif [[ -n "$have_slurm" ]]; then
     slurm_check_user_exists "$username"
     slurm_check_accounts "$username"
+    slurm_check_nosub "$username"
     slurm_check_access "$username"
 fi
 
 
 echo "" # Blank line for section separation
+
+
+### Section: Filesystems
+
+# These skip checks that depend on certain dirs existing
+flag_has_no_homedir=n
+flag_has_no_scratch=n
+flag_has_no_acfs=n
 
 echo -n "Checking whether user has a home directory: "
 if stat --printf='' "/home/${username}" 2>/dev/null
@@ -203,52 +244,83 @@ then
   echo "${GREEN}yes${RESET}"
 else
   echo "${RED}no${RESET}"
+  flag_has_no_homedir=y
 fi
 
 echo -n "Checking whether user has a scratch directory: "
 if stat --printf='' "/scratch/scratch/${username}" 2>/dev/null
 then
   echo "${GREEN}yes${RESET}"
-  flag_has_no_scratch=n
 else
   echo "${RED}no${RESET}"
   flag_has_no_scratch=y
 fi
 
-echo -n "Checking whether home directory is *owned* by that user: "
-owner="$(stat --printf=%U "/home/${username}" 2>/dev/null)"
-if [ "$owner" == "$username" ]
+echo -n "Checking whether user has an acfs directory: "
+if stat --printf='' "/acfs/users/${username}" 2>/dev/null
 then
-  echo "${GREEN}yes${RESET}"
+    echo "${GREEN}yes${RESET}"
 else
-  echo "${RED}no${RESET}"
+    echo "${RED}no${RESET}"
+    flag_has_no_acfs=y
 fi
 
-echo -n "Checking whether scratch directory is *owned* by that user: "
-owner="$(stat --printf=%U "/scratch/scratch/${username}" 2>/dev/null)"
-if [ "$flag_has_no_scratch" == "n" ]
-then
-    if [ "$owner" == "$username" ]
+echo -n "Checking whether home directory is *owned* by that user: "
+if [[ "$flag_has_no_homedir" == "n" ]]; then
+    owner="$(stat --printf=%U "/home/${username}" 2>/dev/null)"
+    if [[ "$owner" == "$username" ]]
     then
-      echo "${GREEN}yes${RESET}"
+        echo "${GREEN}yes${RESET}"
     else
-      echo "${RED}no${RESET}"
+        echo "${RED}no${RESET}"
     fi
 else
     echo "${BLUE}skipped${RESET}"
 fi
 
-echo -n "Checking whether home directory is usable by owner: "
-perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
-if [[ "${perms:1:3}" =~ rwx ]]
+echo -n "Checking whether scratch directory is *owned* by that user: "
+if [[ "$flag_has_no_scratch" == "n" ]]
 then
-    echo "${GREEN}yes${RESET}"
-else 
-    echo "${RED}no: perms are ${perms}${RESET}"
+    owner="$(stat --printf=%U "/scratch/scratch/${username}" 2>/dev/null)"
+    if [[ "$owner" == "$username" ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else
+        echo "${RED}no${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
+fi
+
+echo -n "Checking whether acfs directory is *owned* by that user: "
+if [[ "$flag_has_no_acfs" == "n" ]]; then
+    owner="$(stat --printf=%U "/acfs/users/${username}" 2>/dev/null)"
+    if [[ "$owner" == "$username" ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else
+        echo "${RED}no${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
+fi
+
+
+echo -n "Checking whether home directory is usable by owner: "
+if [[ "$flag_has_no_homedir" == "n" ]]; then
+    perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
+    if [[ "${perms:1:3}" =~ rwx ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else 
+        echo "${RED}no: perms are ${perms}${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
 fi
 
 echo -n "Checking whether scratch directory is usable by owner: "
-if [ "$flag_has_no_scratch" == "n" ]
+if [[ "$flag_has_no_scratch" == "n" ]]
 then
     perms="$(stat --printf=%A "/scratch/scratch/${username}" 2>/dev/null)"
     if [[ "${perms:1:3}" =~ rwx ]];
@@ -261,14 +333,33 @@ else
     echo "${BLUE}skipped${RESET}"
 fi
 
-echo -n "Checking whether home directory has standard permissions: "
-perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
-if [[ "${perms}" == "drwx------" ]];
-then
-    echo "${GREEN}yes${RESET}"
-else 
-    echo "${RED}no: perms are ${perms}${RESET}"
+echo -n "Checking whether acfs directory is usable by owner: "
+if [[ "$flag_has_no_acfs" == "n" ]]; then
+    perms="$(stat --printf=%A "/acfs/users/${username}" 2>/dev/null)"
+    if [[ "${perms:1:3}" =~ rwx ]]
+    then
+        echo "${GREEN}yes${RESET}"
+    else 
+        echo "${RED}no: perms are ${perms}${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
 fi
+
+echo -n "Checking whether home directory has standard permissions: "
+if [[ "$flag_has_no_homedir" == "n" ]]; then
+    perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
+    if [[ "${perms}" == "drwx------" ]];
+    then
+        echo "${GREEN}yes${RESET}"
+    else 
+        echo "${RED}no: perms are ${perms}${RESET}"
+    fi
+else
+    echo "${BLUE}skipped${RESET}"
+fi
+
+### Section: User Activity
 
 echo ""
 
@@ -276,7 +367,7 @@ function sge_check_jobs () {
     local username="$1"
     echo -n "Checking whether user has jobs in the queue: "
     num_jobs="$(qstat -u "$username" | wc -l)"
-    if [ "$num_jobs" -gt 0 ]; then
+    if [[ "$num_jobs" -gt 0 ]]; then
         echo "${GREEN}yes${RESET}"
     else
         echo "${BLUE}no${RESET}"
@@ -287,7 +378,7 @@ function slurm_check_jobs () {
     local username="$1"
     echo -n "Checking whether user has jobs in the queue: "
     num_jobs="$(squeue --noheader --user="$username" --Format='JobID' 2>/dev/null | wc -l)"
-    if [ "$num_jobs" -gt 0 ]; then
+    if [[ "$num_jobs" -gt 0 ]]; then
         echo "${GREEN}yes${RESET}"
     else
         echo "${BLUE}no${RESET}"
@@ -302,7 +393,7 @@ fi
 
 echo -n "Checking when user last logged in to this node: "
 last_login="$(last -adwn 1 "${username}" | head -n 1)"
-if [ -z "$last_login" ]; then
+if [[ -z "$last_login" ]]; then
     echo "${RED}never${RESET}"
 else
     echo "${BLUE}$last_login${RESET}"

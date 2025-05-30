@@ -3,12 +3,12 @@
 
 # generate random number between 1 and 145 ($RANDOM starts at 0)
 range=144
-let "number=$RANDOM % $range +1"
+number=$(( RANDOM % range +1 ))
 # pad to 4 digits
 printf -v number "%04d" $number
 
 echo "------ Test show mmm user"
-./thomas-show --user mmm$number
+./thomas-show --user "mmm$number"
 
 echo ""
 echo "------ Test show contacts"

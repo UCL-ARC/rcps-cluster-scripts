@@ -17,7 +17,7 @@ Executes the transfer as ccspapp (RC Support account).
 "
 
 # No options, show usage
-if [ $# == 0 ] ; then
+if [[ $# == 0 ]] ; then
     echo "$USAGE"
     exit 0;
 fi
@@ -55,10 +55,10 @@ shift $((OPTIND -1))
 gtransfer_command="gtransfer"
 gtransfer_args=""
 # add only one source
-if [ ! -z "$source_id" ]
+if [[ -n "$source_id" ]]
 then
     gtransfer_args+="--fromAccount $source_id"
-elif [ ! -z "$source_project_code" ]
+elif [[ -n "$source_project_code" ]]
 then
     gtransfer_args+="--fromProject $source_project_code"
 else
@@ -67,16 +67,16 @@ else
 fi
 
 # optionally add allocation id: if none specified will use oldest active
-if [ ! -z "$source_allocation" ]
+if [[ -n "$source_allocation" ]]
 then
     gtransfer_args+=" -i $source_allocation"
 fi
 
 # add only one destination
-if [ ! -z "$dest_id" ]
+if [[ -n "$dest_id" ]]
 then
     gtransfer_args+=" --toAccount $dest_id"
-elif [ ! -z "$dest_project_code" ]
+elif [[ -n "$dest_project_code" ]]
 then
     gtransfer_args+=" --toProject $dest_project_code"
 else
@@ -85,13 +85,13 @@ else
 fi
 
 # optionally add description
-if [ ! -z "$description_text" ]
+if [[ -n "$description_text" ]]
 then
     gtransfer_args+=" -d $description_text"
 fi
 
 # add amount of Gold to move
-if [ ! -z "$gold_amount" ]
+if [[ -n "$gold_amount" ]]
 then
     gtransfer_args+=" -z $gold_amount"
 else
@@ -112,8 +112,9 @@ echo "Beacon"
 
 EOF
 )
+# shellcheck disable=2034 # Because it feels like we *should* capture the exit status here but I don't know what to do with it yet
 become_exit_status=$?
-if [ "${become_output:0:6}" != "Beacon" ]; then
+if [[ "${become_output:0:6}" != "Beacon" ]]; then
   echo "Error: could not become ccspapp" >&2
   exit 1
 fi

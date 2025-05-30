@@ -2,7 +2,7 @@
 # wrapper for python3 script
 
 # Source global definitions
-if [ -f /etc/bashrc ]; then
+if [[ -f /etc/bashrc ]]; then
         . /etc/bashrc
 fi
 
@@ -12,5 +12,5 @@ module load mysql-connector-python/2.0.4/python-3.5.2
 
 # get script location
 DIR=$(dirname "$(readlink -f "$0")")
-$DIR/thomas/mmm_to_email.py "$@"
+"$DIR/thomas/mmm_to_email.py" "$@"
 

@@ -21,23 +21,23 @@ fi
 && moduledirs_path="${moduledirs_path}/../common"
 
 # v-- gets a list of all directories named .mf_* created more than 7 days ago
-dirs_to_remove=`find -L $moduledirs_path -maxdepth 1 -type d -name ".mf_*" -ctime +7`
+mapfile dirs_to_remove < <(find -L $moduledirs_path -maxdepth 1 -type d -name ".mf_*" -ctime +7)
 
-num_dirs=`echo "$dirs_to_remove" | wc -l`
+num_dirs="${#dirs_to_remove[@]}"
 
-if [ $num_dirs -eq 0 ]; then
+if [[ $num_dirs -eq 0 ]]; then
   echo "No directories found." >&2
   exit
 fi
 
 while :; do
-  read -n 1 -p "This will delete $num_dirs directories. Are you sure you want to continue? [Y|N|(L)ist] " prompt_response
+  read -r -n 1 -p "This will delete $num_dirs directories. Are you sure you want to continue? [Y|N|(L)ist] " prompt_response
 
   case "${prompt_response,,*}" in
     "y")
-      for i in $dirs_to_remove; do
-        if [ ! -a $i/.keep ]; then
-          'rm' -vRf $i
+      for i in "${dirs_to_remove[@]}"; do
+        if [[ ! -a $i/.keep ]]; then
+          'rm' -vRf "$i"
         else
           echo "Not deleting $i : .keep file found"
         fi
@@ -49,7 +49,7 @@ while :; do
       exit
       ;;
     "l")
-      'ls' -lrtd $dirs_to_remove
+      'ls' -lrtd "${dirs_to_remove[@]}"
       ;;
     *)
       echo "Invalid response. Please choose one of y, n, or l."

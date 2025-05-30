@@ -1,4 +1,7 @@
 #!/bin/bash 
+# Preventing linting this until we know whether we actually need it still,
+#  since it's quite big and cleaning it up would be an irksome amount of effort
+#shellcheck disable=all
 # 
 # Obtained from: 
 #  http://pastebin.com/A8bAuHAP 
