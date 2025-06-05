@@ -87,6 +87,13 @@ elif command -v sacctmgr >/dev/null; then
         echo "Error: detected Slurm, but this cluster is not supposed to run Slurm." >&2
         exit 1
     fi
+    # source common functions
+    . /apps/cluster-scripts/slurm/functions.sh
+    # we need to be a Slurm operator
+    if ! slurm_am_operator; then
+        echo "Error: you must be a Slurm operator to add users" >&2
+        exit 1
+    fi
     # add user to PAG, but only if needed
     if is_member_of "${username}" "${pag}"; then
         echo "${username} is already member of ${pag}"
@@ -98,7 +105,7 @@ elif command -v sacctmgr >/dev/null; then
         fi
         echo "About to add ${username} to AD group ${pag}."
         echo "  If you are prompted for a password, enter your own AD password,"
-        echo "  and consider adding it to the configuration file ~/.config/modgroup.yml"
+        echo "  and consider setting up ~/.config/modgroup.yml with the role account."
         /apps/cluster-bin/modgroup add "${username}" "${pag}"
     fi
     # add user to Slurm account
