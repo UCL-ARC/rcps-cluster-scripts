@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -o errexit \
+    -o nounset \
+    -o pipefail
+
+function usage () {
+    echo "
+    Usage: $0 JOBID
+    
+    Prints the job environment for the given JOBID to stdout.
+
+    Note that Slurm defaults to exporting all the environment from the
+    submitting shell to the job.
+
+    Beware that the output may contain multi-line shell function definitions.
+    "
+}
+
+# source common functions
+scriptfile="$(realpath "$0")"
+scriptdir="${scriptfile%/*}"
+. "${scriptdir}/functions.sh"
+
+
+jobid="${1-}"
+
+if [[ -z "$jobid" ]]; then
+    usage
+    exit 1
+fi
+
+if ! slurm_am_operator; then
+   echo "ERROR: You must be a Slurm Operator to see other users' scripts." >&2
+   exit 1
+fi
+
+sacct --env-vars --jobs="$jobid" \
+| tail -n +3
