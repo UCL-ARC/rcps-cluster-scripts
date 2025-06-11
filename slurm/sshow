@@ -48,25 +48,25 @@ case "$subcmd" in
     "account")
         check_command sacctmgr
         exec sacctmgr show account \
-          format='account%-10,org%-8,coordinators%-9,descr%-60' \
+          format='account%-10,org%-8,coordinators%-10,descr%-60' \
           "$@"
         ;;
     "assoc")
         check_command sacctmgr
         exec sacctmgr show assoc \
-          format='account%-10,user%-8,qos%-60,share,maxsubmit' \
+          format='account%-10,user%-10,share,maxsubmit,defaultqos%-10,qos%-60' \
           "$@"
         ;;
     "qos")
         check_command sacctmgr
         exec sacctmgr show qos \
-          format='name%-10,priority%4,mintres%-12,maxtres%-12,flags%-30,maxjobsperuser,grpjobs,maxsubmit' \
+          format='name%-10,priority%4,mintres%-12,maxtres%-12,maxwall%10,maxjobsperuser,grpjobs,maxsubmit,flags%-30' \
           "$@"
         ;;
     "user")
         check_command sacctmgr
         exec sacctmgr show user \
-          format='user%-8,defaultaccount%-10,admin%-16' \
+          format='user%-10,defaultaccount%-10,admin%-16' \
           "$@"
         ;;
     "node")
