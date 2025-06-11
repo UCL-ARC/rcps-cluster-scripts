@@ -12,16 +12,10 @@ function usage () {
     "
 }
 
-function amOperator() {
-    local adminLevel
-    adminLevel="$(sacctmgr show user "$USER" --noheader --parsable2 | cut -d'|' -f3)"
-    case "${adminLevel}" in
-        Operator|Administrator)
-            return 0 ;;
-        *)
-            return 1 ;;
-    esac
-}
+# source common functions
+scriptfile="$(realpath "$0")"
+scriptdir="${scriptfile%/*}"
+. "${scriptdir}/functions.sh"
 
 
 jobid="${1-}"
@@ -31,7 +25,7 @@ if [[ -z "$jobid" ]]; then
     exit 1
 fi
 
-if ! amOperator; then
+if ! slurm_am_operator; then
    echo "ERROR: You must be a Slurm Operator to see other users' scripts." >&2
    exit 1
 fi

@@ -9,6 +9,15 @@ cluster_name="${CLUSTER_NAME:-}"
 SGE_ACL=""
 slurm_account=""
 
+function is_member_of () {
+    local user="$1"
+    local group="$2"
+    local groups
+    groups="$(groups "${user}" 2>&1)"
+    groups="${groups#*:}"
+    grep -F -qw "${group}" <<< "${groups}"
+}
+
 # Make sure we have a userid to create
 if [[ "$#" -ne "1" ]];
 then
@@ -45,13 +54,16 @@ case "$cluster_name" in
     "kathleen")
         SGE_ACL="Open"
         slurm_account="allusers"
+        pag="pag-archpc-kathleen"
         ;;
     "myriad")
         SGE_ACL="Open"
         slurm_account="allusers"
+        pag="pag-archpc-myriad"
         ;;
     dev-*)
         slurm_account="allusers"
+        pag="pag-archpc-hydra"
         ;;
     "michael"|"young")
         echo "Error: this is not the correct way to add users to the Young and Michael clusters." >&2
@@ -75,6 +87,28 @@ elif command -v sacctmgr >/dev/null; then
         echo "Error: detected Slurm, but this cluster is not supposed to run Slurm." >&2
         exit 1
     fi
+    # source common functions
+    . /apps/cluster-scripts/slurm/functions.sh
+    # we need to be a Slurm operator
+    if ! slurm_am_operator; then
+        echo "Error: you must be a Slurm operator to add users" >&2
+        exit 1
+    fi
+    # add user to PAG, but only if needed
+    if is_member_of "${username}" "${pag}"; then
+        echo "${username} is already member of ${pag}"
+    else
+        # we need to be in the right AD group to do the next bit
+        if ! is_member_of "$(whoami)" 'rg-arc-rc-hpc-groupsadmin'; then
+            echo "Error: you don't have permission to add users to the AD group" >&2
+            exit 1
+        fi
+        echo "About to add ${username} to AD group ${pag}."
+        echo "  If you are prompted for a password, enter your own AD password,"
+        echo "  and consider setting up ~/.config/modgroup.yml with the role account."
+        /apps/cluster-bin/modgroup add "${username}" "${pag}"
+    fi
+    # add user to Slurm account
     sacctmgr --immediate --quiet add user name="${username}" defaultaccount="${slurm_account}"
 else
     echo "Error: no mechanism for adding users found." >&2
