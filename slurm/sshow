@@ -78,13 +78,13 @@ case "$subcmd" in
     "jobhist")
         check_command sacct
         exec sacct --allocations --duplicates \
-          --format 'jobid%8,user%-8,account%-10,qos%-10,state%-10,start%19,elapsed%10,ncpus%5,exitcode,jobname%-24' \
+          --format 'jobid%12,user%-8,account%-10,qos%-10,state%-10,start%19,elapsed%10,nnodes%3,exitcode,jobname%-24' \
           "$@"
         ;;
     "job")
         check_command squeue
         exec squeue \
-          --Format 'jobid:.8 ,username:8 ,account:10 ,qos:10 ,state:10 ,starttime:.19 ,timeused:.10 ,numcpus:.5 ,priority:.10 ,name:24' \
+          --Format 'jobarrayid:.12 ,username:8 ,account:10 ,qos:10 ,state:10 ,starttime:.19 ,timeused:.10 ,numnodes:.3 ,prioritylong:.8 ,name:24' \
           "$@"
         ;;
     *)
