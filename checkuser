@@ -28,6 +28,15 @@ function _blue() {
 
 ### Section: Identity
 
+if [[ "$username" =~ ^[A-Z0-9]+$ ]]; then
+    _red "Warning: this username is uppercased. It may be a UPI, not a username."
+    _red "         It will be converted to lowercase."
+    _red "         (You may also see this when copy/pasting usernames from MyServices.)"
+    old_username="$username"
+    username="${old_username,,}"
+    echo "Username converted to: ${GREEN}${username}${RESET}"
+fi
+
 if [[ "$username" =~ ^[^[:space:]]+@ucl\.ac\.uk$ ]]; then
     echo "${RED}Warning: this username looks like an email address.${RESET}"
     echo "${RED}         It will be checked and converted.${RESET}"
