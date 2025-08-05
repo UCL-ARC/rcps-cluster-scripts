@@ -59,7 +59,7 @@ function _palette() {
 }
 
 # Special case to experiment with colours
-if [[ "$1" == "--palette" ]]; then
+if [[ "${1:-}" == "--palette" ]]; then
     _palette
 fi
 
