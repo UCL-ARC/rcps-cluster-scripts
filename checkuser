@@ -11,61 +11,94 @@ set -o errexit \
 username=${1:-$USER}
 
 RESET="$(tput sgr0)"
+RED="$(tput setaf 1)"
+GREEN="$(tput setaf 2)"
+YELLOW="$(tput setaf 3)"
+BLUE="$(tput setaf 4)"
 B_RED="$(tput setaf 9)"
 B_GREEN="$(tput setaf 10)"
 B_YELLOW="$(tput setaf 11)"
 B_BLUE="$(tput setaf 12)"
 
-function _green() {
-    echo "${B_GREEN}$*${RESET}"
+COLOR_ERROR="${UCLRC_COLOR_ERROR:-${RED}}"
+COLOR_INFO="${UCLRC_COLOR_INFO:-${BLUE}}"
+COLOR_WARN="${UCLRC_COLOR_WARN:-${YELLOW}}"
+COLOR_PASS="${UCLRC_COLOR_PASS:-${GREEN}}"
+COLOR_FAIL="${UCLRC_COLOR_FAIL:-${RED}}"
+
+function _warn() {
+    echo "${COLOR_WARN}$*${RESET}"
 }
-function _red() {
-    echo "${B_RED}$*${RESET}"
+function _error() {
+    echo "${COLOR_ERROR}$*${RESET}"
 }
-function _blue() {
-    echo "${B_BLUE}$*${RESET}"
+function _info() {
+    echo "${COLOR_INFO}$*${RESET}"
 }
-function _yellow() {
-    echo "${B_YELLOW}$*${RESET}"
+function _fail() {
+    echo "${COLOR_FAIL}$*${RESET}"
 }
 
+function _palette() {
+    echo "Palette:"
+    echo " ${RED}Red${RESET}"
+    echo " ${GREEN}Green${RESET}"
+    echo " ${YELLOW}Yellow${RESET}"
+    echo " ${BLUE}Blue${RESET}"
+    echo " ${B_RED}Bold Red${RESET}"
+    echo " ${B_GREEN}Bold Green${RESET}"
+    echo " ${B_YELLOW}Bold Yellow${RESET}"
+    echo " ${B_BLUE}Bold Blue${RESET}"
+    echo "==="
+    echo " ${COLOR_ERROR}Error${RESET}"
+    echo " ${COLOR_WARN}Warn${RESET}"
+    echo " ${COLOR_INFO}Info${RESET}"
+    echo " ${COLOR_PASS}Pass${RESET}"
+    echo " ${COLOR_FAIL}Fail${RESET}"
+    exit
+}
+
+# Special case to experiment with colours
+if [[ "$1" == "--palette" ]]; then
+    _palette
+fi
 
 ### Section: Identity
 
 if [[ "$username" =~ ^[A-Z0-9]+$ ]]; then
-    _red "Warning: this username is uppercased. It may be a UPI, not a username."
-    _red "         It will be converted to lowercase."
-    _red "         (You may also see this when copy/pasting usernames from MyServices.)"
+    _warn "Warning: this username is uppercased. It may be a UPI, not a username."
+    _warn "         It will be converted to lowercase."
+    _warn "         (You may also see this when copy/pasting usernames from MyServices.)"
     old_username="$username"
     username="${old_username,,}"
-    echo "Username converted to: ${B_GREEN}${username}${RESET}"
+    echo "Username converted to: ${COLOR_PASS}${username}${RESET}"
 fi
 
 if [[ "$username" =~ ^[^[:space:]]+@ucl\.ac\.uk$ ]]; then
-    _red "Warning: this username looks like an email address."
-    _red "         It will be checked and converted."
+    _warn "Warning: this username looks like an email address."
+    _warn "         It will be checked and converted."
 
     echo -n "Can id email address: "
-    id "$username" >/dev/null 2>/dev/null && echo "${B_GREEN}yes${RESET}" || echo "${B_RED}no${RESET}"
+    id "$username" >/dev/null 2>/dev/null && echo "${COLOR_PASS}yes${RESET}" || echo "${COLOR_WARN}no${RESET}"
     old_username="$username"
     if username="$(id -un "$username")"; then
-        echo "Username converted successfully to: ${B_GREEN}${username}${RESET}"
+        echo "Username converted successfully to: ${COLOR_PASS}${username}${RESET}"
     else
-        _red "${B_RED}Could not convert email address to username, leaving as-is."
+        _warn "Could not convert email address to username, leaving as-is."
         username="${old_username}"
     fi
 fi
 
 echo -n "Can id user: "
-id "$username" >/dev/null 2>/dev/null && echo "${B_GREEN}yes${RESET}" || echo "${B_RED}no${RESET}"
+id "$username" >/dev/null 2>/dev/null && echo "${COLOR_PASS}yes${RESET}" || echo "${COLOR_FAIL}no${RESET}"
 
 
 echo -n "User is in groups: "
 if user_groups="$(groups "$username" 2>&1)"
 then
-    echo "${B_GREEN}${user_groups#*:}${RESET}"
+    echo "${COLOR_PASS}${user_groups#*:}${RESET}"
 else
-    echo "${B_RED}${user_groups#groups: *:}${RESET}"
+    echo "${COLOR_FAIL}${user_groups#groups: *:}${RESET}"
 fi
 
 echo "" # Blank line for section separation
@@ -94,12 +127,12 @@ function sge_check_acls() {
         if qconf -su "$access_group" 2>/dev/null >/dev/null; then
             if qconf -su "$access_group" | grep -q "$username"
             then
-              echo "${B_GREEN}yes${RESET}"
+              echo "${COLOR_PASS}yes${RESET}"
             else
-              echo "${B_RED}no${RESET}"
+              echo "${COLOR_FAIL}no${RESET}"
             fi
         else
-            echo "${B_BLUE}no such group${RESET}"
+            echo "${COLOR_INFO}no such group${RESET}"
         fi
     done
 }
@@ -112,25 +145,25 @@ function sge_check_nosub() {
         # check NoSubmission for blocked users
         if qconf -su NoSubmission | grep -q "$username"
         then
-          echo "${B_RED}yes${RESET}"
+          echo "${COLOR_FAIL}yes${RESET}"
         else
-          echo "${B_GREEN}no${RESET}"
+          echo "${COLOR_PASS}no${RESET}"
         fi
     else
-        echo "${B_GREEN}no (no blocked ACL here)${RESET}"
+        echo "${COLOR_PASS}no (no blocked ACL here)${RESET}"
     fi
 }
 
 function slurm_check_user_exists() {
     local username="$1"
     echo -n "Checking whether user is in Slurm DB: "
-    command -v jq >/dev/null || echo "${B_RED}could not check, jq not found${RESET}"
+    command -v jq >/dev/null || echo "${COLOR_FAIL}could not check, jq not found${RESET}"
     if sacctmgr --json list user "$username" \
         | jq -er '.users[].name' >/dev/null
     then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else
-        echo "${B_RED}no${RESET}"
+        echo "${COLOR_FAIL}no${RESET}"
     fi
 }
 
@@ -146,9 +179,9 @@ function slurm_check_accounts() {
         account_desc="$(sacctmgr show account "$account" --json | jq -r '.accounts[].description')"
         echo -n "Checking whether user is in account ${account} (${account_desc}): "
         if grep -F -qw "${account}" <<< "${user_accounts}"; then
-            echo "${B_GREEN}yes${RESET}"
+            echo "${COLOR_PASS}yes${RESET}"
         else
-            echo "${B_RED}no${RESET}"
+            echo "${COLOR_FAIL}no${RESET}"
         fi
     done
 }
@@ -162,9 +195,9 @@ function slurm_check_nosub () {
     maxsubmitjob="$(sacctmgr show assoc --noheader --parsable2 \
         where account="$account" user="$username" format='maxsubmitjob')"
     if [[ "$maxsubmitjob" == '0' ]]; then
-        echo "${B_RED}yes${RESET}"
+        echo "${COLOR_FAIL}yes${RESET}"
     else
-        echo "${B_GREEN}no${RESET}"
+        echo "${COLOR_PASS}no${RESET}"
     fi
 }
 
@@ -174,13 +207,13 @@ function sge_check_access () {
 
     echo -n "Checking whether user is in the actual PAM userlist: "
     if [[ ! -r "$pam_listfile" ]]; then
-        echo "${B_RED}error${RESET}"
+        echo "${COLOR_FAIL}error${RESET}"
         return
     fi
     if grep "^$username\$" "$pam_listfile" >/dev/null; then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else
-        echo "${B_RED}no${RESET}"
+        echo "${COLOR_FAIL}no${RESET}"
     fi
 }
 
@@ -193,7 +226,7 @@ function slurm_check_access () {
 
     echo -n "Checking whether user is in the platform access group: "
     if [[ -z "$clustername" ]]; then
-        echo "${B_RED}cannot determine cluster${RESET}"
+        echo "${COLOR_FAIL}cannot determine cluster${RESET}"
         return
     fi
     case "$clustername" in
@@ -203,19 +236,19 @@ function slurm_check_access () {
         michael)  pag='pag-archpc-michael' ;;
         dev-*)    pag='pag-archpc-hydra' ;;
         *)
-            echo "${B_RED}unknown cluster \"$clustername\"${RESET}"
+            echo "${COLOR_FAIL}unknown cluster \"$clustername\"${RESET}"
             return
             ;;
     esac
     if user_groups="$(groups "$username" 2>&1)"; then
         user_groups="${user_groups#*:}"
         if grep -F -qw "$pag" <<< "$user_groups"; then
-            echo "${B_GREEN}yes${RESET} ($pag)"
+            echo "${COLOR_PASS}yes${RESET} ($pag)"
         else
-            echo "${B_RED}no${RESET}"
+            echo "${COLOR_FAIL}no${RESET}"
         fi
     else
-        echo "${B_RED}no${RESET}"
+        echo "${COLOR_FAIL}no${RESET}"
     fi
 }
 
@@ -254,27 +287,27 @@ flag_has_no_acfs=n
 echo -n "Checking whether user has a home directory: "
 if stat --printf='' "/home/${username}" 2>/dev/null
 then
-  echo "${B_GREEN}yes${RESET}"
+  echo "${COLOR_PASS}yes${RESET}"
 else
-  echo "${B_RED}no${RESET}"
+  echo "${COLOR_FAIL}no${RESET}"
   flag_has_no_homedir=y
 fi
 
 echo -n "Checking whether user has a scratch directory: "
 if stat --printf='' "/scratch/scratch/${username}" 2>/dev/null
 then
-  echo "${B_GREEN}yes${RESET}"
+  echo "${COLOR_PASS}yes${RESET}"
 else
-  echo "${B_RED}no${RESET}"
+  echo "${COLOR_FAIL}no${RESET}"
   flag_has_no_scratch=y
 fi
 
 echo -n "Checking whether user has an acfs directory: "
 if stat --printf='' "/acfs/users/${username}" 2>/dev/null
 then
-    echo "${B_GREEN}yes${RESET}"
+    echo "${COLOR_PASS}yes${RESET}"
 else
-    echo "${B_RED}no${RESET}"
+    echo "${COLOR_FAIL}no${RESET}"
     flag_has_no_acfs=y
 fi
 
@@ -283,12 +316,12 @@ if [[ "$flag_has_no_homedir" == "n" ]]; then
     owner="$(stat --printf=%U "/home/${username}" 2>/dev/null)"
     if [[ "$owner" == "$username" ]]
     then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else
-        echo "${B_RED}no${RESET}"
+        echo "${COLOR_FAIL}no${RESET}"
     fi
 else
-    echo "${B_BLUE}skipped${RESET}"
+    echo "${COLOR_INFO}skipped${RESET}"
 fi
 
 echo -n "Checking whether scratch directory is *owned* by that user: "
@@ -297,12 +330,12 @@ then
     owner="$(stat --printf=%U "/scratch/scratch/${username}" 2>/dev/null)"
     if [[ "$owner" == "$username" ]]
     then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else
-        echo "${B_RED}no${RESET}"
+        echo "${COLOR_FAIL}no${RESET}"
     fi
 else
-    echo "${B_BLUE}skipped${RESET}"
+    echo "${COLOR_INFO}skipped${RESET}"
 fi
 
 echo -n "Checking whether acfs directory is *owned* by that user: "
@@ -310,12 +343,12 @@ if [[ "$flag_has_no_acfs" == "n" ]]; then
     owner="$(stat --printf=%U "/acfs/users/${username}" 2>/dev/null)"
     if [[ "$owner" == "$username" ]]
     then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else
-        echo "${B_RED}no${RESET}"
+        echo "${COLOR_FAIL}no${RESET}"
     fi
 else
-    echo "${B_BLUE}skipped${RESET}"
+    echo "${COLOR_INFO}skipped${RESET}"
 fi
 
 
@@ -324,12 +357,12 @@ if [[ "$flag_has_no_homedir" == "n" ]]; then
     perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
     if [[ "${perms:1:3}" =~ rwx ]]
     then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else 
-        echo "${B_RED}no: perms are ${perms}${RESET}"
+        echo "${COLOR_FAIL}no: perms are ${perms}${RESET}"
     fi
 else
-    echo "${B_BLUE}skipped${RESET}"
+    echo "${COLOR_INFO}skipped${RESET}"
 fi
 
 echo -n "Checking whether scratch directory is usable by owner: "
@@ -338,12 +371,12 @@ then
     perms="$(stat --printf=%A "/scratch/scratch/${username}" 2>/dev/null)"
     if [[ "${perms:1:3}" =~ rwx ]];
     then
-        echo  "${B_GREEN}yes${RESET}"
+        echo  "${COLOR_PASS}yes${RESET}"
     else 
-        echo "${B_RED}no: perms are ${perms}${RESET}"
+        echo "${COLOR_FAIL}no: perms are ${perms}${RESET}"
     fi
 else
-    echo "${B_BLUE}skipped${RESET}"
+    echo "${COLOR_INFO}skipped${RESET}"
 fi
 
 echo -n "Checking whether acfs directory is usable by owner: "
@@ -351,12 +384,12 @@ if [[ "$flag_has_no_acfs" == "n" ]]; then
     perms="$(stat --printf=%A "/acfs/users/${username}" 2>/dev/null)"
     if [[ "${perms:1:3}" =~ rwx ]]
     then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else 
-        echo "${B_RED}no: perms are ${perms}${RESET}"
+        echo "${COLOR_FAIL}no: perms are ${perms}${RESET}"
     fi
 else
-    echo "${B_BLUE}skipped${RESET}"
+    echo "${COLOR_INFO}skipped${RESET}"
 fi
 
 echo -n "Checking whether home directory has standard permissions: "
@@ -364,12 +397,12 @@ if [[ "$flag_has_no_homedir" == "n" ]]; then
     perms="$(stat --printf=%A "/home/${username}" 2>/dev/null)"
     if [[ "${perms}" == "drwx------" ]];
     then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else 
-        echo "${B_RED}no: perms are ${perms}${RESET}"
+        echo "${COLOR_FAIL}no: perms are ${perms}${RESET}"
     fi
 else
-    echo "${B_BLUE}skipped${RESET}"
+    echo "${COLOR_INFO}skipped${RESET}"
 fi
 
 ### Section: User Activity
@@ -381,9 +414,9 @@ function sge_check_jobs () {
     echo -n "Checking whether user has jobs in the queue: "
     num_jobs="$(qstat -u "$username" | wc -l)"
     if [[ "$num_jobs" -gt 0 ]]; then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else
-        echo "${B_BLUE}no${RESET}"
+        echo "${COLOR_INFO}no${RESET}"
     fi
 }
 
@@ -392,9 +425,9 @@ function slurm_check_jobs () {
     echo -n "Checking whether user has jobs in the queue: "
     num_jobs="$(squeue --noheader --user="$username" --Format='JobID' 2>/dev/null | wc -l)"
     if [[ "$num_jobs" -gt 0 ]]; then
-        echo "${B_GREEN}yes${RESET}"
+        echo "${COLOR_PASS}yes${RESET}"
     else
-        echo "${B_BLUE}no${RESET}"
+        echo "${COLOR_INFO}no${RESET}"
     fi
 }
 
@@ -407,8 +440,8 @@ fi
 echo -n "Checking when user last logged in to this node: "
 last_login="$(last -adwn 1 "${username}" | head -n 1)"
 if [[ -z "$last_login" ]]; then
-    echo "${B_RED}never${RESET}"
+    echo "${COLOR_FAIL}never${RESET}"
 else
-    echo "${B_BLUE}$last_login${RESET}"
+    echo "${COLOR_INFO}$last_login${RESET}"
 fi
 
