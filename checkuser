@@ -261,7 +261,13 @@ else
 fi
 
 echo -n "Checking whether user has a scratch directory: "
-if stat --printf='' "${user_scratch_dir}" 2>/dev/null
+# On clusters with no discrete scratch FS, ordinary users
+#  can't stat other users' scratch directories
+if [[ -x "$(dirname "$user_scratch_dir")" ]]
+then
+    echo "${BLUE}inaccessible, skipped${RESET}"
+    flag_has_no_scratch="y"
+elif stat --printf='' "${user_scratch_dir}" 2>/dev/null
 then
   echo "${GREEN}yes${RESET}"
 else
