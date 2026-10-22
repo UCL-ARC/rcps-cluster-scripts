@@ -38,6 +38,7 @@ corresponding man pages.
 }
 
 
+# shellcheck disable=SC2120
 function pp () {
    local    delimiter="${1-|}"
    local -a lines widths fields
@@ -65,7 +66,7 @@ function pp () {
       fmt="${fmt}%-${w}s "
       [[ "$w" -gt "$maxwidth" ]] && maxwidth="$w"
    done
-   printf -v sep "%*s" "$maxwidth"
+   printf -v sep "%*s" "$maxwidth" ' '
    sep="${sep// /-}"
 
    # print input lines with fields padded nicely
