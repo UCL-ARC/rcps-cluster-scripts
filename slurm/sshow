@@ -4,6 +4,7 @@ set -o errexit \
     -o nounset \
     -o pipefail
 
+
 function check_command () {
     local cmd="$1"
     if ! command -v "$cmd" &>/dev/null; then
@@ -12,6 +13,7 @@ function check_command () {
         exit 1
      fi
 }
+
 
 function usage() {
     >&2 \
@@ -35,6 +37,14 @@ corresponding man pages.
     "$(basename "$0")"
 }
 
+
+# shellcheck disable=SC2120
+function pp () {
+   local delimiter="${1-|}"
+   column --table --separator "$delimiter" --output-separator ' '
+}
+
+
 if [[ "$#" -lt 1 ]]; then
     usage
     exit 1
@@ -47,45 +57,45 @@ case "$subcmd" in
     # These are all very simple at the moment. If they get complicated, split them out into a function.
     "account")
         check_command sacctmgr
-        exec sacctmgr show account \
-          format='account%-10,org%-8,coordinators%-10,descr%-60' \
-          "$@"
+        sacctmgr --parsable2 show account \
+          format='account,org,coordinators,descr' \
+          "$@" | pp
         ;;
     "assoc")
         check_command sacctmgr
-        exec sacctmgr show assoc \
-          format='account%-10,user%-10,share,maxsubmit,defaultqos%-10,qos%-60' \
-          "$@"
+        sacctmgr --parsable2 show assoc \
+          format='account%,user,share,maxsubmit,defaultqos,qos' \
+          "$@" | pp
         ;;
     "qos")
         check_command sacctmgr
-        exec sacctmgr show qos \
-          format='name%-10,priority%4,mintres%-12,maxtres%-12,maxwall%10,maxjobsperuser,grpjobs,maxsubmit,flags%-30' \
-          "$@"
+        sacctmgr --parsable2 show qos \
+          format='name,priority,mintres,maxtres,maxwall,maxjobsperuser,grpjobs,maxsubmit,flags' \
+          "$@" | pp
         ;;
     "user")
         check_command sacctmgr
-        exec sacctmgr show user \
-          format='user%-10,defaultaccount%-10,admin%-16' \
-          "$@"
+        sacctmgr --parsable2 show user \
+          format='user,defaultaccount,admin' \
+          "$@" | pp
         ;;
     "node")
         check_command sinfo
-        exec sinfo --Node \
-          --Format 'NodeHost:16,Available:6,CPUsState:14,CPUsLoad:.8,Memory:.8 ,FreeMem:.8 ,StateCompact:8,Reason:40' \
-          "$@"
+        sinfo --Node \
+          --format '%n|%a|%C|%O|%m|%e|%t|%E' \
+          "$@" | pp
         ;;
     "jobhist")
         check_command sacct
-        exec sacct --allocations --duplicates \
-          --format 'jobid%12,user%-8,account%-10,qos%-10,state%-10,start%19,elapsed%10,nnodes%3,exitcode,jobname%-24' \
-          "$@"
+        sacct --parsable2 --allocations --duplicates \
+          --format 'jobid,user,account,qos,state,start,elapsed,nnodes,exitcode,jobname' \
+          "$@" | pp
         ;;
     "job")
         check_command squeue
-        exec squeue \
-          --Format 'jobarrayid:.12 ,username:8 ,account:10 ,qos:10 ,state:10 ,starttime:.19 ,timeused:.10 ,numnodes:.3 ,prioritylong:.8 ,name:24' \
-          "$@"
+        squeue \
+          --format '%i|%u|%a|%q|%T|%S|%M|%D|%p|%j' \
+          "$@" | pp
         ;;
     *)
         # This implements something like git's handling of scripts named e.g. git-thing
