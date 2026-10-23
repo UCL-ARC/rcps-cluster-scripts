@@ -40,52 +40,9 @@ corresponding man pages.
 
 # shellcheck disable=SC2120
 function pp () {
-   local    delimiter="${1-|}"
-   local -a lines widths fields
-   local    i w n field fmt maxwidth sep line
-
-   # store all input lines
-   readarray -t lines
-
-   # scan lines for required field widths
-   for line in "${lines[@]}"; do
-      readarray -d "$delimiter" -t fields <<< "$line"
-      i=0
-      for field in "${fields[@]}"; do
-         field="${field%[$'\n']}"  # chomp
-         w="${#field}"
-         [[ "$w" -gt "${widths[$i]-0}" ]] && widths[$i]="$w"
-         (( i+=1 ))
-      done
-   done
-
-   # create helper strings for formatting
-   fmt=""
-   maxwidth=0
-   for w in "${widths[@]}"; do
-      fmt="${fmt}%-${w}s "
-      [[ "$w" -gt "$maxwidth" ]] && maxwidth="$w"
-   done
-   printf -v sep "%*s" "$maxwidth" ' '
-   sep="${sep// /-}"
-
-   # print input lines with fields padded nicely
-   n=0
-   for line in "${lines[@]}"; do
-      readarray -d "$delimiter" -t fields <<< "$line"
-      printf "${fmt}\n" "${fields[@]%[$'\n']}"
-      (( n+=1 ))
-      # add a pretty separator line after first line
-      if [[ "$n" == 1 ]]; then
-         for w in "${widths[@]}"; do
-            echo -n "${sep:0:$w} "
-         done
-         echo
-         (( n+=1 ))
-      fi
-   done
+   local delimiter="${1-|}"
+   column --table --separator "$delimiter" --output-separator ' '
 }
-
 
 
 if [[ "$#" -lt 1 ]]; then
