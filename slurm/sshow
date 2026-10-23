@@ -42,7 +42,7 @@ corresponding man pages.
 function pp () {
    local    delimiter="${1-|}"
    local -a lines widths fields
-   local    i w n
+   local    i w n field fmt maxwidth sep line
 
    # store all input lines
    readarray -t lines
