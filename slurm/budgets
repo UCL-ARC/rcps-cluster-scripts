@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# A replacement for the budgets command we used with Gold, shows user's Slurm accounts
+sacctmgr show user withassoc format='account%35' "$USER" 
+
