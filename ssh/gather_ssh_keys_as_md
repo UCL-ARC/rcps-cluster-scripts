@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -o errexit \
+    -o nounset \
+    -o pipefail
+
+if [[ "${#@}" -eq 0 ]] || [[ "${1:-}" == "-h" ]]; then
+    cat <<EOF
+$0 [name:]hostname [[name:]hostname...]
+
+Gather SSH host key fingerprints from one or more addresses, formatting for Markdown.
+
+Example:
+    $0 Myriad:myriad.rc.ucl.ac.uk kathleen.rc.ucl.ac.uk Young:young.rc.ucl.ac.uk
+EOF
+    exit
+fi
+
+for h in "$@"; do
+    
+    host_name="${h%%:*}"
+    if [[ "$h" == "$host_name" ]]; then
+        printf "## \`%s\`\n\n\`\`\`\n" "$h"
+    else
+        print_host="${h%%:*}"
+        h="${h##*:}"
+        printf "## %s\n\n\`\`\`\n" "$print_host"
+    fi
+    key_text="$(ssh-keyscan "$h")"
+    printf "%s\n%s\n" \
+        "$(ssh-keygen -E MD5 -lf - <<<"$key_text")" \
+        "$(ssh-keygen -E SHA256 -lf - <<<"$key_text")" \
+        | sed -e 's/^[0-9]* \([^ ]*\) [A-Za-z.-]* (\([RSAECDSAED25519]*\))/\2 \1/' \
+        | sort \
+        | column -t
+    printf "\`\`\`\n\n"
+done
+

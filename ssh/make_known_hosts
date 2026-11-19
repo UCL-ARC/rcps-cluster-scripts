@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -o errexit \
+    -o nounset \
+    -o pipefail \
+    -o noclobber
+
+if [[ "${#@}" -eq 0 ]]; then
+    cat <<EOF
+$0 hostname [hostname...]
+
+Get SSH host keys for hostnames and make a known_hosts file from them.
+EOF
+    exit
+fi
+
+kf="$(mktemp)"
+echo "# UCL ARC Research Computing Clusters" >> "$kf"
+echo "# (nb: hashed to prevent discovery in case of compromise)" >> "$kf"
+ssh-keyscan "$@" \
+    | grep -v '^#' \
+    | sort \
+    >> "$kf"
+echo "##" >> "$kf"
+ssh-keygen -H -f "$kf" >/dev/null
+cat "$kf"
+rm "$kf"
